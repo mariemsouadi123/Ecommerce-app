@@ -1,9 +1,10 @@
+import 'package:ecommerce_app/features/checkout/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ecommerce_app/features/checkout/presentation/pages/checkout_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:ecommerce_app/features/cart/domain/entities/cart_item.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
-import 'package:ecommerce_app/features/cart/presentation/pages/checkout_page.dart';
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
 
 class CartPage extends StatelessWidget {
@@ -30,17 +31,22 @@ class CartPage extends StatelessWidget {
               SnackBar(content: Text(state.message)),
             );
           }
+          if (state is CheckoutSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Payment successful!')),
+            );
+          }
         },
         builder: (context, state) {
           if (state is CartLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           if (state is CartLoaded) {
             if (state.items.isEmpty) {
               return const Center(child: Text('Your cart is empty'));
             }
-            
+
             final total = state.items.fold<double>(
               0,
               (sum, item) => sum + (item.product.price * item.quantity),
@@ -111,15 +117,30 @@ class CartPage extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _handleCheckout(context, state.items, total);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor:
+                            Colors.green, // Green color for payment button
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () =>
+                          _handlePayment(context, state.items, total),
+                      child: const Text(
+                        'Proceed to Payment',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                    child: const Text('Checkout'),
                   ),
                 ),
               ],
@@ -136,18 +157,21 @@ class CartPage extends StatelessWidget {
     context.read<CartBloc>().add(RemoveProductFromCartEvent(product));
   }
 
-  void _handleCheckout(BuildContext context, List<CartItem> items, double total) {
+  void _handlePayment(
+      BuildContext context, List<CartItem> items, double total) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Order'),
+        title: const Text('Confirm Payment'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Are you sure you want to proceed with this order?'),
+            const Text('Are you sure you want to proceed with this payment?'),
             const SizedBox(height: 16),
-            Text('Total: \$${total.toStringAsFixed(2)}'),
+            Text('Total Amount: \$${total.toStringAsFixed(2)}'),
+            const SizedBox(height: 8),
+            const Text('This action cannot be undone.'),
           ],
         ),
         actions: [
@@ -156,23 +180,26 @@ class CartPage extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+            ),
             onPressed: () {
-              Navigator.pop(context); 
-              _proceedToCheckout(context, items, total);
+              Navigator.pop(context);
+              // Navigate to CheckoutPage instead of dispatching event
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      CheckoutPage(items: items, total: total),
+                ),
+              );
             },
-            child: const Text('Confirm'),
+            child: const Text(
+              'Confirm Payment',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _proceedToCheckout(BuildContext context, List<CartItem> items, double total) {
-    context.read<CartBloc>().add(CheckoutCartEvent(items: items, total: total));
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CheckoutPage(items: items, total: total),
       ),
     );
   }

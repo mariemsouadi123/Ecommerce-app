@@ -5,19 +5,14 @@ class CartMemoryDataSource {
 
   Future<void> cacheProduct(Product product) async {
     _cartItems.add(product);
-  }
-
+  } 
   Future<List<Product>> getCachedProducts() async {
-    return List<Product>.from(_cartItems);
+    return _cartItems;
   }
-
   Future<void> removeProduct(Product product) async {
     _cartItems.removeWhere((p) => p.id == product.id);
   }
-
   Future<void> clearCart() async {
     _cartItems.clear();
   }
-
-
 }

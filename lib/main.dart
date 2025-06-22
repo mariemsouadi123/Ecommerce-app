@@ -1,5 +1,7 @@
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
 import 'package:ecommerce_app/features/cart/presentation/pages/cart_page.dart';
+import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
+import 'package:ecommerce_app/features/checkout/presentation/bloc/checkout/checkout_bloc.dart';
 import 'package:ecommerce_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,17 +20,25 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(create: (_) => sl<ProductsBloc>()..add(GetAllProductsEvent())),
-        BlocProvider(create: (_) => sl<CartBloc>()),
-      ],
-      child: MaterialApp(
-        title: 'E-Commerce App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
+        RepositoryProvider<CheckoutRepository>(
+          create: (context) => sl<CheckoutRepository>(),
         ),
-        home: const MainPage(),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => sl<ProductsBloc>()..add(GetAllProductsEvent())),
+          BlocProvider(create: (_) => sl<CartBloc>()),
+          BlocProvider(create: (_) => sl<CheckoutBloc>()),
+        ],
+        child: MaterialApp(
+          title: 'E-Commerce App',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          home: const MainPage(),
+        ),
       ),
     );
   }

@@ -3,10 +3,14 @@ import 'package:ecommerce_app/features/cart/data/datasources/cart_memory_data_so
 import 'package:ecommerce_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ecommerce_app/features/cart/domain/repositories/cart_repository.dart';
 import 'package:ecommerce_app/features/cart/domain/usecases/add_product_to_crt.dart';
-import 'package:ecommerce_app/features/cart/domain/usecases/checkout_cart.dart';
 import 'package:ecommerce_app/features/cart/domain/usecases/get_cart_items.dart';
 import 'package:ecommerce_app/features/cart/domain/usecases/remove_product_from_cart.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
+import 'package:ecommerce_app/features/checkout/data/datasources/checkout_remote_data_source.dart';
+import 'package:ecommerce_app/features/checkout/data/repositories/checkout_repository_impl.dart';
+import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
+import 'package:ecommerce_app/features/checkout/domain/usecases/process_payment.dart';
+import 'package:ecommerce_app/features/checkout/presentation/bloc/checkout/checkout_bloc.dart';
 import 'package:ecommerce_app/features/products/data/datasources/product_local_data_source.dart';
 import 'package:ecommerce_app/features/products/data/datasources/product_remote_data_source.dart';
 import 'package:ecommerce_app/features/products/data/repositories/product_repositories_impl.dart';
@@ -21,25 +25,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  // Blocs
   sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
   sl.registerFactory(() => CartBloc(
         addProductToCart: sl(),
         getCartItems: sl(),
-
-        checkoutCart: sl(), removeProductFromCart: sl(),
+  removeProductFromCart: sl(),
       ));
 
-  // Use cases
+        sl.registerFactory(() => CheckoutBloc(processPayment: sl()));
+
   sl.registerLazySingleton(() => GetAllProductsUseCase(sl()));
   sl.registerLazySingleton(() => AddProductToCartUseCase(sl()));
   sl.registerLazySingleton(() => GetCartItemsUseCase(sl()));
     sl.registerLazySingleton(() => RemoveProductFromCartUseCase(sl()));
+  sl.registerLazySingleton(() => ProcessPayment(sl()));
 
-sl.registerLazySingleton<CheckoutCartUseCase>(
-  () => CheckoutCartUseCaseImpl(sl()), 
-);
-  // Repositories
+
   sl.registerLazySingleton<ProductRepository>(() => ProductRepositoryImpl(
         remoteDataSource: sl(),
         localDataSource: sl(),
@@ -49,20 +50,24 @@ sl.registerLazySingleton<CheckoutCartUseCase>(
   sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl(
         memoryDataSource: sl(),
       ));
+    
+    sl.registerLazySingleton<CheckoutRepository>(() => CheckoutRepositoryImpl(
+        remoteDataSource: sl(),
+      ));
 
-  // Data sources
   sl.registerLazySingleton<CartMemoryDataSource>(() => CartMemoryDataSource());
   sl.registerLazySingleton<ProductRemoteDataSource>(
     () => ProductRemoteDataSourceImpl(client: sl()),
   );
+
   sl.registerLazySingleton<ProductLocalDataSource>(
     () => ProductLocalDataSourceImpl(sharedPreferences: sl()),
   );
-
-  // Core
+sl.registerLazySingleton<CheckoutRemoteDataSource>(
+    () => CheckoutRemoteDataSourceImpl(client: sl(), baseUrl: 'http://10.0.2.2:5000'),
+  );
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
 
-  // External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => http.Client());

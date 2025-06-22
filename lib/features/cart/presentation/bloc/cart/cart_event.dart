@@ -15,17 +15,8 @@ class AddProductToCartEvent extends CartEvent {
   @override
   List<Object> get props => [product];
 }
-class CheckoutCartEvent extends CartEvent {
-  final List<CartItem> items;
-  final double total;
 
-  const CheckoutCartEvent({required this.items, required this.total});
 
-  @override
-  List<Object> get props => [items, total];
-}
-
-// Add to cart_event.dart
 class RemoveProductFromCartEvent extends CartEvent {
   final Product product;
 

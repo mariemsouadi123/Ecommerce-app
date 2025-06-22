@@ -1,4 +1,3 @@
-// lib/features/cart/data/repositories/cart_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import 'package:ecommerce_app/core/errors/failures.dart';
 import 'package:ecommerce_app/features/cart/data/datasources/cart_memory_data_source.dart';
@@ -46,21 +45,7 @@ class CartRepositoryImpl implements CartRepository {
         .toList();
   }
 
-  @override
-  Future<Either<Failure, void>> checkoutCart(List<CartItem> items) async {
-    try {
-      if (items.isEmpty) {
-        return Left(EmptyCartFailure());
-      }
-
-      await memoryDataSource.clearCart();
-
-      return const Right(null);
-    } catch (e) {
-      return Left(ServerFailure());
-    }
-  }
-
+  
   @override
   Future<Either<Failure, void>> removeProductFromCart(Product product) async {
     try {
