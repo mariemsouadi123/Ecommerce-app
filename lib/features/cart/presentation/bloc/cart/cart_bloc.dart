@@ -8,14 +8,15 @@ import 'package:ecommerce_app/features/cart/domain/usecases/get_cart_items.dart'
 import 'package:ecommerce_app/features/cart/domain/usecases/remove_product_from_cart.dart';
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
+
 part 'cart_event.dart';
 part 'cart_state.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
   final AddProductToCartUseCase addProductToCart;
   final GetCartItemsUseCase getCartItems;
-  final RemoveProductFromCartUseCase removeProductFromCart; 
-
+  final RemoveProductFromCartUseCase removeProductFromCart;
 
   CartBloc({
     required this.addProductToCart,
@@ -27,7 +28,7 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
   }
 
-    Future<void> _onAddProductToCart(
+  Future<void> _onAddProductToCart(
     AddProductToCartEvent event,
     Emitter<CartState> emit,
   ) async {
@@ -50,30 +51,22 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       (items) => emit(CartLoaded(items: items)),
     );
   }
-
-  
-
   Future<void> _onRemoveProductFromCart(
     RemoveProductFromCartEvent event,
     Emitter<CartState> emit,
   ) async {
-    if (state is CartLoaded) {
-      emit(CartLoading());
-      final failureOrSuccess = await removeProductFromCart(event.product);
-      failureOrSuccess.fold(
-        (failure) => emit(CartError(message: _mapFailureToMessage(failure))),
-        (_) => add(LoadCartEvent()),
-      );
-    }
+    emit(CartLoading());
+    final failureOrSuccess = await removeProductFromCart(event.product);
+    failureOrSuccess.fold(
+      (failure) => emit(CartError(message: _mapFailureToMessage(failure))),
+      (_) => add(LoadCartEvent()),
+    );
   }
+
   String _mapFailureToMessage(Failure failure) {
-    switch (failure.runtimeType) {
-      case ServerFailure:
-        return SERVER_FAILURE_MESSAGE;
-      case EmptyCacheFailure:
-        return EMPTY_CACHE_FAILURE_MESSAGE;
-      default:
-        return 'Unexpected error';
+    if (failure is EmptyCacheFailure) {
+      return failure.message ?? EMPTY_CACHE_FAILURE_MESSAGE;
     }
+    return 'Unexpected error';
   }
 }

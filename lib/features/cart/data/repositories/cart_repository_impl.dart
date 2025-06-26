@@ -23,29 +23,16 @@ class CartRepositoryImpl implements CartRepository {
   @override
   Future<Either<Failure, List<CartItem>>> getCartItems() async {
     try {
-      final products = await memoryDataSource.getCachedProducts();
-      final cartItems = _groupProducts(products);
+      final cartItems = await memoryDataSource.getCachedProducts();
+      if (cartItems.isEmpty) {
+        return Left(EmptyCacheFailure(message: 'Cart is empty'));
+      }
       return Right(cartItems);
     } catch (e) {
       return Left(EmptyCacheFailure());
     }
   }
 
-  List<CartItem> _groupProducts(List<Product> products) {
-    final productCounts = <Product, int>{};
-    for (final product in products) {
-      productCounts.update(
-        product,
-        (value) => value + 1,
-        ifAbsent: () => 1,
-      );
-    }
-    return productCounts.entries
-        .map((entry) => CartItem(product: entry.key, quantity: entry.value))
-        .toList();
-  }
-
-  
   @override
   Future<Either<Failure, void>> removeProductFromCart(Product product) async {
     try {

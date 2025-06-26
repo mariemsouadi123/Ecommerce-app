@@ -13,8 +13,12 @@ class ServerFailure extends Failure {
 }
 
 class EmptyCacheFailure extends Failure {
+  final String? message;
+
+  EmptyCacheFailure({this.message});
+
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [message];
 }
 class NotFoundFailure extends Failure {
   @override

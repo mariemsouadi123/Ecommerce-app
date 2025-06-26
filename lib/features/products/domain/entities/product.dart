@@ -18,13 +18,5 @@ class Product extends Equatable {
       required this.stock,
       required this.imageUrl});
   @override
-   List<Object?> get props => [
-        id,
-        name,
-        price,
-        description,
-        category,
-        stock,
-        imageUrl,
-      ];
+  List<Object> get props => [name]; // Comparaison par NOM seulement
 }
