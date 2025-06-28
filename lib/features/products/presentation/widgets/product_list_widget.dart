@@ -16,128 +16,180 @@ class ProductListWidget extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red[400],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           );
         }
       },
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: products.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          final product = products[index];
-          return BlocBuilder<CartBloc, CartState>(
-            builder: (context, cartState) {
-              final itemCount = cartState is CartLoaded
-                  ? cartState.items
-                      .where((cartItem) => cartItem.product.id == product.id)
-                      .fold<int>(0, (sum, cartItem) => sum + cartItem.quantity)
-                  : 0;
-
-              return Material(
-                borderRadius: BorderRadius.circular(12),
-                elevation: 1,
-                color: Colors.white,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            product.imageUrl,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => 
-                              Container(
-                                width: 80,
-                                height: 80,
-                                color: Colors.grey[200],
-                                child: const Icon(Icons.image_not_supported, size: 40),
-                              ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                          Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '\$${product.price.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${product.stock} available',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                          IconButton(
-                          icon: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.add_shopping_cart,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                          onPressed: () {
-                            context.read<CartBloc>().add(
-                              AddProductToCartEvent(product),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Added ${product.name} to cart'),
-                                duration: const Duration(seconds: 1),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                margin: const EdgeInsets.only(
-                                  bottom: 20,
-                                  left: 16,
-                                  right: 16,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: _calculateChildAspectRatio(constraints.maxWidth),
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: products.length,
+            itemBuilder: (context, index) => _buildProductCard(context, products[index]),
           );
         },
+      ),
+    );
+  }
+
+  double _calculateChildAspectRatio(double maxWidth) {
+    final cardWidth = (maxWidth - 32 - 16) / 2; // Subtract padding and spacing
+    return cardWidth / (cardWidth + 100); // Adjust height based on width
+  }
+
+  Widget _buildProductCard(BuildContext context, Product product) {
+    return BlocBuilder<CartBloc, CartState>(
+      builder: (context, state) {
+        final itemCount = state is CartLoaded
+            ? state.items
+                .where((item) => item.product.id == product.id)
+                .fold<int>(0, (sum, item) => sum + item.quantity)
+            : 0;
+
+        return ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: 200,
+            maxHeight: 300,
+          ),
+          child: Card(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                // Navigation to product details
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Product image
+                    SizedBox(
+                      height: 100, // Fixed height for image
+                      width: double.infinity,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          color: Colors.grey[100],
+                          child: Center(
+                            child: Image.network(
+                              product.imageUrl,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Product name
+                    SizedBox(
+                      height: 40, 
+                      child: Text(
+                        product.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    
+                    // Price
+                    Text(
+                      '\$${product.price.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.blue,
+                      ),
+                    ),
+                    const Spacer(),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Stock: ${product.stock}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: product.stock > 0 
+                                  ? Colors.green[600]
+                                  : Colors.red[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        _buildAddButton(context, product, itemCount),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAddButton(BuildContext context, Product product, int itemCount) {
+  return GestureDetector(
+    onTap: product.stock > 0
+        ? () {
+            context.read<CartBloc>().add(AddProductToCartEvent(product));
+            _showAddedSnackbar(context, product.name);
+          }
+        : null,
+    child: Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: product.stock > 0
+            ? Theme.of(context).primaryColor.withOpacity(0.1)
+            : Colors.grey.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.add_shopping_cart, 
+        color: product.stock > 0
+            ? Theme.of(context).primaryColor
+            : Colors.grey,
+        size: 20,
+      ),
+    ),
+  );
+}
+
+  void _showAddedSnackbar(BuildContext context, String productName) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Added $productName to cart'),
+        duration: const Duration(milliseconds: 800),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.only(bottom: 20, left: 16, right: 16),
       ),
     );
   }

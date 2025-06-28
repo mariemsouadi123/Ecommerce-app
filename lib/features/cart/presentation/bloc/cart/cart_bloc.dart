@@ -14,15 +14,9 @@ part 'cart_event.dart';
 part 'cart_state.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
-  final AddProductToCartUseCase addProductToCart;
-  final GetCartItemsUseCase getCartItems;
-  final RemoveProductFromCartUseCase removeProductFromCart;
+  List<CartItem> _cartItems = []; // Remplace CartMemoryDataSource
 
-  CartBloc({
-    required this.addProductToCart,
-    required this.getCartItems,
-    required this.removeProductFromCart,
-  }) : super(CartInitial()) {
+  CartBloc() : super(CartInitial()) {
     on<AddProductToCartEvent>(_onAddProductToCart);
     on<LoadCartEvent>(_onLoadCart);
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
@@ -33,11 +27,24 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     emit(CartLoading());
-    final failureOrSuccess = await addProductToCart(event.product);
-    failureOrSuccess.fold(
-      (failure) => emit(CartError(message: _mapFailureToMessage(failure))),
-      (_) => add(LoadCartEvent()),
-    );
+    try {
+      final existingIndex = _cartItems.indexWhere(
+        (item) => item.product.name == event.product.name,
+      );
+
+      if (existingIndex >= 0) {
+        _cartItems[existingIndex] = CartItem(
+          product: _cartItems[existingIndex].product,
+          quantity: _cartItems[existingIndex].quantity + 1,
+        );
+      } else {
+        _cartItems.add(CartItem(product: event.product, quantity: 1));
+      }
+      
+      emit(CartLoaded(items: List.unmodifiable(_cartItems)));
+    } catch (e) {
+      emit(CartError(message: _mapFailureToMessage(EmptyCacheFailure())));
+    }
   }
 
   Future<void> _onLoadCart(
@@ -45,22 +52,42 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     Emitter<CartState> emit,
   ) async {
     emit(CartLoading());
-    final failureOrCartItems = await getCartItems();
-    failureOrCartItems.fold(
-      (failure) => emit(CartError(message: _mapFailureToMessage(failure))),
-      (items) => emit(CartLoaded(items: items)),
-    );
+    try {
+      if (_cartItems.isEmpty) {
+        emit(CartError(message: 'Cart is empty'));
+      } else {
+        emit(CartLoaded(items: List.unmodifiable(_cartItems)));
+      }
+    } catch (e) {
+      emit(CartError(message: _mapFailureToMessage(EmptyCacheFailure())));
+    }
   }
+
   Future<void> _onRemoveProductFromCart(
     RemoveProductFromCartEvent event,
     Emitter<CartState> emit,
   ) async {
     emit(CartLoading());
-    final failureOrSuccess = await removeProductFromCart(event.product);
-    failureOrSuccess.fold(
-      (failure) => emit(CartError(message: _mapFailureToMessage(failure))),
-      (_) => add(LoadCartEvent()),
-    );
+    try {
+      final existingIndex = _cartItems.indexWhere(
+        (item) => item.product.name == event.product.name,
+      );
+
+      if (existingIndex >= 0) {
+        if (_cartItems[existingIndex].quantity > 1) {
+          _cartItems[existingIndex] = CartItem(
+            product: _cartItems[existingIndex].product,
+            quantity: _cartItems[existingIndex].quantity - 1,
+          );
+        } else {
+          _cartItems.removeAt(existingIndex);
+        }
+      }
+      
+      emit(CartLoaded(items: List.unmodifiable(_cartItems)));
+    } catch (e) {
+      emit(CartError(message: _mapFailureToMessage(EmptyCacheFailure())));
+    }
   }
 
   String _mapFailureToMessage(Failure failure) {

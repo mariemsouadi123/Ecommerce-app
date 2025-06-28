@@ -1,5 +1,4 @@
 import 'package:ecommerce_app/core/network/network_info.dart';
-import 'package:ecommerce_app/features/cart/data/datasources/cart_memory_data_source.dart';
 import 'package:ecommerce_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ecommerce_app/features/cart/domain/repositories/cart_repository.dart';
 import 'package:ecommerce_app/features/cart/domain/usecases/add_product_to_crt.dart';
@@ -26,11 +25,8 @@ final sl = GetIt.instance;
 
 Future<void> init() async {
   sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
-  sl.registerFactory(() => CartBloc(
-        addProductToCart: sl(),
-        getCartItems: sl(),
-  removeProductFromCart: sl(),
-      ));
+  sl.registerFactory(() => CartBloc());
+
 
         sl.registerFactory(() => CheckoutBloc(processPayment: sl()));
 
@@ -47,15 +43,13 @@ Future<void> init() async {
         networkInfo: sl(),
       ));
       
-  sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl(
-        memoryDataSource: sl(),
-      ));
+  sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl());
+
     
     sl.registerLazySingleton<CheckoutRepository>(() => CheckoutRepositoryImpl(
         remoteDataSource: sl(),
       ));
 
-  sl.registerLazySingleton<CartMemoryDataSource>(() => CartMemoryDataSource());
   sl.registerLazySingleton<ProductRemoteDataSource>(
     () => ProductRemoteDataSourceImpl(client: sl()),
   );

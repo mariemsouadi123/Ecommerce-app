@@ -10,28 +10,38 @@ class ProductsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Products', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Our Products', 
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20)),
         centerTitle: true,
-        elevation: 1,
+        elevation: 0,
         backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: BlocBuilder<ProductsBloc, ProductsState>(
-          builder: (context, state) {
-            if (state is LoadingProductsState) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is LoadedProductsState) {
-              return RefreshIndicator(
-                onRefresh: () => _onRefresh(context),
-                child: ProductListWidget(products: state.products),
-              );
-            } else if (state is ErrorProductsState) {
-              return Center(child: Text(state.message));
-            }
+      backgroundColor: Colors.grey[50],
+      body: BlocBuilder<ProductsBloc, ProductsState>(
+        builder: (context, state) {
+          if (state is LoadingProductsState) {
             return const Center(child: CircularProgressIndicator());
-          },
-        ),
+          } else if (state is LoadedProductsState) {
+            return ProductListWidget(products: state.products);
+          } else if (state is ErrorProductsState) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(state.message, 
+                      style: const TextStyle(fontSize: 16)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => _onRefresh(context),
+                    child: const Text('Try Again'),
+                  )
+                ],
+              ),
+            );
+          }
+          return const Center(child: CircularProgressIndicator());
+        },
       ),
     );
   }
