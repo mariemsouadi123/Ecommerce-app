@@ -9,14 +9,16 @@ class Product extends Equatable {
   final int stock;
   final String imageUrl;
 
-  const Product(
-      {required this.id,
-      required this.name,
-      required this.price,
-      required this.description,
-      required this.category,
-      required this.stock,
-      required this.imageUrl});
+  const Product({
+    required this.id,
+    required this.name,
+    required this.price,
+    required this.description,
+    required this.category,
+    required this.stock,
+    required this.imageUrl,
+  });
+
   @override
-  List<Object> get props => [name]; // Comparaison par NOM seulement
+  List<Object> get props => [id, name]; 
 }

@@ -1,196 +1,231 @@
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
+import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ProductListWidget extends StatelessWidget {
   final List<Product> products;
+  final Function(Product) onFavoritePressed;
+  final bool Function(Product) isFavorite;
 
-  const ProductListWidget({super.key, required this.products});
+  const ProductListWidget({
+    super.key, 
+    required this.products,
+    required this.onFavoritePressed,
+    required this.isFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<CartBloc, CartState>(
+    return BlocListener<FavoriteBloc, FavoriteState>(
       listener: (context, state) {
-        if (state is CartError) {
+        if (state is FavoriteError) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.red[400],
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+            SnackBar(content: Text(state.message)),
           );
         }
       },
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.72, // Ratio légèrement ajusté
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final product = products[index];
+          return _ProductCard(
+            key: ValueKey(product.name),
+            product: product,
+            isFavorite: isFavorite(product),
+            onFavoritePressed: () => onFavoritePressed(product),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ProductCard extends StatefulWidget {
+  final Product product;
+  final bool isFavorite;
+  final VoidCallback onFavoritePressed;
+
+  const _ProductCard({
+    required Key key,
+    required this.product,
+    required this.isFavorite,
+    required this.onFavoritePressed,
+  }) : super(key: key);
+
+  @override
+  State<_ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<_ProductCard> {
+  late bool _isFavorite;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorite = widget.isFavorite;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isFavorite != widget.isFavorite) {
+      _isFavorite = widget.isFavorite;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: _calculateChildAspectRatio(constraints.maxWidth),
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+          return SizedBox(
+            height: constraints.maxWidth * 1.4, 
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      SizedBox(
+                        height: constraints.maxWidth * 0.7, 
+                        width: double.infinity,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            widget.product.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => 
+                              const Icon(Icons.image_not_supported),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+ 
+                      SizedBox(
+                        height: 40, 
+                        child: Text(
+                          widget.product.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      
+                      // Prix
+                      Text(
+                        '\$${widget.product.price.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const Spacer(),
+
+                      SizedBox(
+                        height: 24, 
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Stock: ${widget.product.stock}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: widget.product.stock > 0 
+                                      ? Colors.green[600]
+                                      : Colors.red[600],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            _buildAddButton(context),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: _buildFavoriteButton(),
+                  ),
+                ],
+              ),
             ),
-            itemCount: products.length,
-            itemBuilder: (context, index) => _buildProductCard(context, products[index]),
           );
         },
       ),
     );
   }
 
-  double _calculateChildAspectRatio(double maxWidth) {
-    final cardWidth = (maxWidth - 32 - 16) / 2; // Subtract padding and spacing
-    return cardWidth / (cardWidth + 100); // Adjust height based on width
-  }
-
-  Widget _buildProductCard(BuildContext context, Product product) {
-    return BlocBuilder<CartBloc, CartState>(
-      builder: (context, state) {
-        final itemCount = state is CartLoaded
-            ? state.items
-                .where((item) => item.product.id == product.id)
-                .fold<int>(0, (sum, item) => sum + item.quantity)
-            : 0;
-
-        return ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: 200,
-            maxHeight: 300,
-          ),
-          child: Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                // Navigation to product details
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Product image
-                    SizedBox(
-                      height: 100, // Fixed height for image
-                      width: double.infinity,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          color: Colors.grey[100],
-                          child: Center(
-                            child: Image.network(
-                              product.imageUrl,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    
-                    // Product name
-                    SizedBox(
-                      height: 40, 
-                      child: Text(
-                        product.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    
-                    // Price
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const Spacer(),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Stock: ${product.stock}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: product.stock > 0 
-                                  ? Colors.green[600]
-                                  : Colors.red[600],
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        _buildAddButton(context, product, itemCount),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+  Widget _buildAddButton(BuildContext context) {
+    return IconButton(
+      padding: EdgeInsets.zero, 
+      constraints: const BoxConstraints(),
+      icon: const Icon(Icons.add_shopping_cart),
+      iconSize: 20,
+      color: Theme.of(context).primaryColor,
+      onPressed: () {
+        context.read<CartBloc>().add(AddProductToCartEvent(widget.product));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added ${widget.product.name} to cart'),
+            duration: const Duration(milliseconds: 800),
           ),
         );
       },
     );
   }
 
-  Widget _buildAddButton(BuildContext context, Product product, int itemCount) {
-  return GestureDetector(
-    onTap: product.stock > 0
-        ? () {
-            context.read<CartBloc>().add(AddProductToCartEvent(product));
-            _showAddedSnackbar(context, product.name);
-          }
-        : null,
-    child: Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: product.stock > 0
-            ? Theme.of(context).primaryColor.withOpacity(0.1)
-            : Colors.grey.withOpacity(0.1),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        Icons.add_shopping_cart, 
-        color: product.stock > 0
-            ? Theme.of(context).primaryColor
-            : Colors.grey,
-        size: 20,
-      ),
-    ),
-  );
-}
-
-  void _showAddedSnackbar(BuildContext context, String productName) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Added $productName to cart'),
-        duration: const Duration(milliseconds: 800),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        margin: const EdgeInsets.only(bottom: 20, left: 16, right: 16),
-      ),
+  Widget _buildFavoriteButton() {
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(), 
+      icon: _isProcessing
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Icon(
+              _isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: _isFavorite ? Colors.red : Colors.grey,
+              size: 20, 
+            ),
+      onPressed: _isProcessing
+          ? null
+          : () async {
+              setState(() => _isProcessing = true);
+              try {
+                widget.onFavoritePressed();
+                setState(() => _isFavorite = !_isFavorite);
+              } finally {
+                setState(() => _isProcessing = false);
+              }
+            },
     );
   }
 }

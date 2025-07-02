@@ -41,10 +41,10 @@ class _CheckoutView extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _CheckoutViewState createState() => _CheckoutViewState();
+  State<_CheckoutView> createState() => __CheckoutViewState();
 }
 
-class _CheckoutViewState extends State<_CheckoutView> {
+class __CheckoutViewState extends State<_CheckoutView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,24 +52,29 @@ class _CheckoutViewState extends State<_CheckoutView> {
       body: BlocConsumer<CheckoutBloc, CheckoutState>(
         listener: (context, state) {
           if (state is CheckoutSuccess) {
-            _navigateToSuccess(context, state.order);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PaymentSuccessPage(order: state.order),
+              ),
+            );
           } else if (state is CheckoutError) {
-            // Only show error if it's not a success message
-            if (!state.message.toLowerCase().contains('success')) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
-            }
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
           }
         },
         builder: (context, state) {
+          if (state is CheckoutLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Your order summary widgets here
                 Expanded(child: _buildOrderSummary()),
-                _buildPaymentButton(context, state),
+                _buildPaymentButton(context),
               ],
             ),
           );
@@ -85,7 +90,7 @@ class _CheckoutViewState extends State<_CheckoutView> {
         const SizedBox(height: 16),
         ...widget.items.map((item) => ListTile(
           leading: Image.network(item.product.imageUrl, width: 50, height: 50),
-          title: Text(item .product.name),
+          title: Text(item.product.name),
           subtitle: Text('Qty: ${item.quantity}'),
           trailing: Text('\$${(item.product.price * item.quantity).toStringAsFixed(2)}'),
         )),
@@ -102,17 +107,12 @@ class _CheckoutViewState extends State<_CheckoutView> {
     );
   }
 
-  Widget _buildPaymentButton(BuildContext context, CheckoutState state) {
+  Widget _buildPaymentButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        onPressed: state is CheckoutLoading ? null : () => _confirmPayment(context),
-        child: state is CheckoutLoading
-            ? const CircularProgressIndicator()
-            : const Text('CONFIRM PAYMENT'),
+        onPressed: () => _confirmPayment(context),
+        child: const Text('CONFIRM PAYMENT'),
       ),
     );
   }
@@ -122,15 +122,6 @@ class _CheckoutViewState extends State<_CheckoutView> {
       ProcessPaymentEvent(
         items: widget.items,
         total: widget.total,
-      ),
-    );
-  }
-
-  void _navigateToSuccess(BuildContext context, PurchaseOrder order) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PaymentSuccessPage(order: order),
       ),
     );
   }

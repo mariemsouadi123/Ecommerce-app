@@ -22,6 +22,7 @@ class CartLoaded extends CartState {
 
 class CartCheckoutSuccess extends CartState {}
 
+
 class CartError extends CartState {
   final String message;
 
@@ -30,3 +31,4 @@ class CartError extends CartState {
   @override
   List<Object> get props => [message];
 }
+

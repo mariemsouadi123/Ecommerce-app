@@ -16,25 +16,25 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
 
   ProductRemoteDataSourceImpl({required this.client});
 
-  @override
-  Future<List<ProductModel>> getAllProducts() async {
-    final response = await client.get(
-      Uri.parse("$BASE_URL/api/products"),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    );
+ @override
+Future<List<ProductModel>> getAllProducts() async {
+  final response = await client.get(
+    Uri.parse("$BASE_URL/api/products"),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  );
 
-    if (response.statusCode == 200) {
-      final List decodedJson = json.decode(response.body) as List;
-      final List<ProductModel> productModels = decodedJson
-          .map<ProductModel>((json) => ProductModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-      return productModels;
-    } else {
-      throw ServerException();
-    }
+  if (response.statusCode == 200) {
+    final List decodedJson = json.decode(response.body) as List;
+    final List<ProductModel> productModels = decodedJson
+        .map<ProductModel>((json) => ProductModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+    return productModels;
+  } else {
+    throw ServerException();
   }
+}
 
   @override
   Future<ProductModel> getProductById(String id) async {

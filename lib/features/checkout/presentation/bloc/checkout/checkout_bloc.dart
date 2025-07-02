@@ -18,37 +18,19 @@ class CheckoutBloc extends Bloc<CheckoutEvent, CheckoutState> {
   }
 
   Future<void> _processPayment(
-  ProcessPaymentEvent event,
-  Emitter<CheckoutState> emit,
-) async {
-  emit(CheckoutLoading());
-
-  try {
+    ProcessPaymentEvent event,
+    Emitter<CheckoutState> emit,
+  ) async {
+    emit(CheckoutLoading());
+    
     final result = await processPayment(
       items: event.items,
       total: event.total,
     );
 
     result.fold(
-      (failure) {
-        emit(CheckoutError(message: _mapFailureToMessage(failure)));
-      },
-      (order) {
-        emit(CheckoutSuccess(order));
-      },
+      (failure) => emit(CheckoutError(message: failure.message ?? 'Payment failed')),
+      (order) => emit(CheckoutSuccess(order)),
     );
-  } catch (e) {
-    debugPrint('Exception during payment: $e');
-    emit(CheckoutError(message: 'Unexpected error occurred during payment.'));
-  }
-}
-
-  String _mapFailureToMessage(Failure failure) {
-    if (failure is ServerFailure) {
-      return 'Server error occurred';
-    } else if (failure is OfflineFailure) {
-      return 'No internet connection';
-    }
-    return 'Payment failed. Please try again.';
   }
 }

@@ -25,4 +25,6 @@ class RemoveProductFromCartEvent extends CartEvent {
   @override
   List<Object> get props => [product];
 }
+class ClearCartEvent extends CartEvent {} // Add this new event
+
 class LoadCartEvent extends CartEvent {}

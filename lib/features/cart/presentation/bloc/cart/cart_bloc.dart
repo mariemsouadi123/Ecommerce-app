@@ -14,12 +14,14 @@ part 'cart_event.dart';
 part 'cart_state.dart';
 
 class CartBloc extends Bloc<CartEvent, CartState> {
-  List<CartItem> _cartItems = []; // Remplace CartMemoryDataSource
+  List<CartItem> _cartItems = []; 
 
   CartBloc() : super(CartInitial()) {
     on<AddProductToCartEvent>(_onAddProductToCart);
     on<LoadCartEvent>(_onLoadCart);
     on<RemoveProductFromCartEvent>(_onRemoveProductFromCart);
+    on<ClearCartEvent>(_onClearCart); // Add this line
+
   }
 
   Future<void> _onAddProductToCart(
@@ -95,5 +97,13 @@ class CartBloc extends Bloc<CartEvent, CartState> {
       return failure.message ?? EMPTY_CACHE_FAILURE_MESSAGE;
     }
     return 'Unexpected error';
+  }
+  Future<void> _onClearCart(
+    ClearCartEvent event,
+    Emitter<CartState> emit,
+  ) async {
+    emit(CartLoading());
+    _cartItems.clear();
+    emit(CartLoaded(items: List.from(_cartItems)));
   }
 }

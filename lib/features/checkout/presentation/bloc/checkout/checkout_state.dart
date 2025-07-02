@@ -23,7 +23,8 @@ class CheckoutSuccess extends CheckoutState {
 class CheckoutError extends CheckoutState {
   final String message;
 
-const CheckoutError({required this.message});
+  const CheckoutError({required this.message});
+
   @override
   List<Object> get props => [message];
 }

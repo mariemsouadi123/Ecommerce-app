@@ -5,11 +5,18 @@ import 'package:ecommerce_app/features/cart/domain/usecases/add_product_to_crt.d
 import 'package:ecommerce_app/features/cart/domain/usecases/get_cart_items.dart';
 import 'package:ecommerce_app/features/cart/domain/usecases/remove_product_from_cart.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
+import 'package:ecommerce_app/features/checkout/data/datasources/checkoutRemoteDataSourceImpl.dart';
 import 'package:ecommerce_app/features/checkout/data/datasources/checkout_remote_data_source.dart';
 import 'package:ecommerce_app/features/checkout/data/repositories/checkout_repository_impl.dart';
 import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
 import 'package:ecommerce_app/features/checkout/domain/usecases/process_payment.dart';
 import 'package:ecommerce_app/features/checkout/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ecommerce_app/features/favorites/data/repositories/favorite_repository_impl.dart';
+import 'package:ecommerce_app/features/favorites/domain/repositories/favorite_repository.dart';
+import 'package:ecommerce_app/features/favorites/domain/usecases/add_to_favorites.dart';
+import 'package:ecommerce_app/features/favorites/domain/usecases/get_favorites.dart';
+import 'package:ecommerce_app/features/favorites/domain/usecases/remove_from_favorites.dart';
+import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
 import 'package:ecommerce_app/features/products/data/datasources/product_local_data_source.dart';
 import 'package:ecommerce_app/features/products/data/datasources/product_remote_data_source.dart';
 import 'package:ecommerce_app/features/products/data/repositories/product_repositories_impl.dart';
@@ -26,10 +33,7 @@ final sl = GetIt.instance;
 Future<void> init() async {
   sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
   sl.registerFactory(() => CartBloc());
-
-
-        sl.registerFactory(() => CheckoutBloc(processPayment: sl()));
-
+  sl.registerFactory(() => CheckoutBloc(processPayment: sl()));
   sl.registerLazySingleton(() => GetAllProductsUseCase(sl()));
   sl.registerLazySingleton(() => AddProductToCartUseCase(sl()));
   sl.registerLazySingleton(() => GetCartItemsUseCase(sl()));
@@ -66,4 +70,28 @@ sl.registerLazySingleton<CheckoutRemoteDataSource>(
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => InternetConnectionChecker());
+
+sl.registerSingleton<FavoriteRepository>(
+  FavoriteRepositoryImpl(),
+);
+
+sl.registerSingleton<AddToFavorites>(
+  AddToFavorites(sl()),
+);
+
+sl.registerSingleton<GetFavorites>(
+  GetFavorites(sl()),
+);
+
+sl.registerSingleton<RemoveFromFavorites>(
+  RemoveFromFavorites(sl()),
+);
+
+sl.registerFactory<FavoriteBloc>(
+  () => FavoriteBloc(
+    addToFavorites: sl(),
+    getFavorites: sl(),
+    removeFromFavorites: sl(),
+  ),
+);
 }

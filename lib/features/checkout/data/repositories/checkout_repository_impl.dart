@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart' as dartz;
+import 'package:dartz/dartz.dart';
 import 'package:ecommerce_app/core/errors/failures.dart';
 import 'package:ecommerce_app/features/cart/domain/entities/cart_item.dart';
 import 'package:ecommerce_app/features/checkout/data/datasources/checkout_remote_data_source.dart';
@@ -10,8 +10,7 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
 
   CheckoutRepositoryImpl({required this.remoteDataSource});
 
-  @override
-  Future<dartz.Either<Failure, PurchaseOrder>> processPayment({
+  Future<Either<Failure, PurchaseOrder>> processPayment({
     required List<CartItem> items,
     required double total,
   }) async {
@@ -21,19 +20,20 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
     );
 
     return failureOrResponse.fold(
-      (failure) => dartz.Left(failure),
+      (failure) => Left(failure),
       (response) {
         try {
+          final orderData = response['order'];
           final order = PurchaseOrder(
-            id: response['_id'],
+            id: orderData['id'],
             items: items,
-            total: total,
-            date: DateTime.parse(response['createdAt']),
-            status: 'completed',
+            total: orderData['total'],
+            date: DateTime.parse(orderData['createdAt']),
+            status: orderData['status'],
           );
-          return dartz.Right(order);
+          return Right(order);
         } catch (e) {
-          return dartz.Left(ServerFailure());
+          return Left(ServerFailure(message: 'Failed to parse order data'));
         }
       },
     );

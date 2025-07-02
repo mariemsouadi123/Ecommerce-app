@@ -2,12 +2,17 @@ import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dar
 import 'package:ecommerce_app/features/cart/presentation/pages/cart_page.dart';
 import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
 import 'package:ecommerce_app/features/checkout/presentation/bloc/checkout/checkout_bloc.dart';
+import 'package:ecommerce_app/features/favorites/domain/repositories/favorite_repository.dart';
+import 'package:ecommerce_app/features/favorites/domain/usecases/add_to_favorites.dart';
+import 'package:ecommerce_app/features/favorites/domain/usecases/get_favorites.dart';
+import 'package:ecommerce_app/features/favorites/domain/usecases/remove_from_favorites.dart';
+import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
+import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
+import 'package:ecommerce_app/features/products/presentation/pages/products_page.dart';
 import 'package:ecommerce_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
-import 'package:ecommerce_app/features/products/presentation/pages/products_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,13 +29,19 @@ class MyApp extends StatelessWidget {
       providers: [
         RepositoryProvider<CheckoutRepository>(
           create: (context) => sl<CheckoutRepository>(),
-        ),
-      ],
+    )],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(create: (_) => sl<ProductsBloc>()..add(GetAllProductsEvent())),
           BlocProvider(create: (_) => sl<CartBloc>()),
           BlocProvider(create: (_) => sl<CheckoutBloc>()),
+          BlocProvider(
+            create: (context) => FavoriteBloc(
+              addToFavorites: AddToFavorites(sl<FavoriteRepository>()),
+              getFavorites: GetFavorites(sl<FavoriteRepository>()),
+              removeFromFavorites: RemoveFromFavorites(sl<FavoriteRepository>()),
+            )..add(LoadFavoritesEvent()),
+          ),
         ],
         child: MaterialApp(
           title: 'E-Commerce App',
@@ -43,6 +54,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -55,7 +67,7 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> _pages = [
     const ProductsPage(),
-    const CartPage(),
+    const CartPage(), 
   ];
 
   @override
@@ -69,7 +81,7 @@ class _MainPageState extends State<MainPage> {
           return BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              if (index == 1) {
+              if (index == 1) { // Index modifié car il n'y a plus que 2 onglets
                 context.read<CartBloc>().add(LoadCartEvent());
               }
               setState(() => _currentIndex = index);
@@ -79,7 +91,7 @@ class _MainPageState extends State<MainPage> {
                 icon: Icon(Icons.home),
                 label: 'Products',
               ),
-              BottomNavigationBarItem(
+              BottomNavigationBarItem( 
                 icon: Stack(
                   children: [
                     const Icon(Icons.shopping_cart),
