@@ -3,6 +3,7 @@ import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favo
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
 import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
 import 'package:ecommerce_app/features/products/presentation/blocs/products/products_state.dart';
+import 'package:ecommerce_app/features/products/presentation/pages/products_detailed_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -130,7 +131,6 @@ class _ProductCard extends StatefulWidget {
   State<_ProductCard> createState() => _ProductCardState();
 }
 
-
 class _ProductCardState extends State<_ProductCard> {
   late bool _isFavorite;
   bool _isProcessing = false;
@@ -151,92 +151,102 @@ class _ProductCardState extends State<_ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SizedBox(
-            height: constraints.maxWidth * 1.4,
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        height: constraints.maxWidth * 0.7,
-                        width: double.infinity,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            widget.product.imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => 
-                              const Icon(Icons.image_not_supported),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 40,
-                        child: Text(
-                          widget.product.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '\$${widget.product.price.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const Spacer(),
-                      SizedBox(
-                        height: 24,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                'Stock: ${widget.product.stock}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: widget.product.stock > 0 
-                                      ? Colors.green[600]
-                                      : Colors.red[600],
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailsPage(product: widget.product),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              height: constraints.maxWidth * 1.4,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          height: constraints.maxWidth * 0.7,
+                          width: double.infinity,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              widget.product.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => 
+                                const Icon(Icons.image_not_supported),
                             ),
-                            _buildAddButton(context),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: _buildFavoriteButton(),
-                  ),
-                ],
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 40,
+                          child: Text(
+                            widget.product.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '\$${widget.product.price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const Spacer(),
+                        SizedBox(
+                          height: 24,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Stock: ${widget.product.stock}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: widget.product.stock > 0 
+                                        ? Colors.green[600]
+                                        : Colors.red[600],
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              _buildAddButton(context),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: _buildFavoriteButton(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
