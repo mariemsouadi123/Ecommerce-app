@@ -1,3 +1,4 @@
+// products_event.dart
 part of 'products_bloc.dart';
 
 sealed class ProductsEvent extends Equatable {
@@ -13,10 +14,22 @@ class RefreshProductsEvent extends ProductsEvent {}
 
 class LoadProductsByCategoryEvent extends ProductsEvent {
   final String category;
-  LoadProductsByCategoryEvent(this.category);
+  const LoadProductsByCategoryEvent(this.category);
+
+  @override
+  List<Object> get props => [category];
 }
 
-class SearchProductsEvent extends ProductsEvent {
+
+
+class FilterProductsByCategory extends ProductsEvent {
+  final String category;
+  const FilterProductsByCategory(this.category);
+  @override List<Object> get props => [category];
+}
+
+class SearchProducts extends ProductsEvent {
   final String query;
-  SearchProductsEvent(this.query);
+  const SearchProducts(this.query);
+  @override List<Object> get props => [query];
 }

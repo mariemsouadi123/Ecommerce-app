@@ -1,127 +1,66 @@
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
 import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
+import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
+import 'package:ecommerce_app/features/products/presentation/blocs/products/products_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class ProductListWidget extends StatefulWidget {
+class ProductListWidget extends StatelessWidget {
   final List<Product> products;
   final Function(Product) onFavoritePressed;
   final bool Function(Product) isFavorite;
 
   const ProductListWidget({
-    super.key, 
+    super.key,
     required this.products,
     required this.onFavoritePressed,
     required this.isFavorite,
   });
 
   @override
-  State<ProductListWidget> createState() => _ProductListWidgetState();
-}
-
-class _ProductListWidgetState extends State<ProductListWidget> {
-  String _selectedCategory = 'All';
-  late List<Product> _filteredProducts;
-
-  @override
-  void initState() {
-    super.initState();
-    _filteredProducts = widget.products;
-  }
-
-  @override
-  void didUpdateWidget(covariant ProductListWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.products != widget.products) {
-      _filterProducts();
-    }
-  }
-
-  void _filterProducts() {
-    if (_selectedCategory == 'All') {
-      setState(() {
-        _filteredProducts = widget.products;
-      });
-    } else {
-      setState(() {
-        _filteredProducts = widget.products
-            .where((product) => product.category == _selectedCategory)
-            .toList();
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(
+        _buildCategoryFilter(context),
+        _buildProductGrid(context),
+      ],
+    );
+  }
+
+  Widget _buildCategoryFilter(BuildContext context) {
+    return BlocBuilder<ProductsBloc, ProductsState>(
+      builder: (context, state) {
+        if (state is! ProductsLoaded) return const SizedBox.shrink();
+        
+        return SizedBox(
           height: 60,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              _buildCategoryChip('All', _selectedCategory == 'All'),
-              _buildCategoryChip('Clothes', _selectedCategory == 'Clothes'),
-              _buildCategoryChip('Make_Up', _selectedCategory == 'Make_Up'),
-              _buildCategoryChip('SkinCare', _selectedCategory == 'SkinCare'),
-              _buildCategoryChip('Accessories', _selectedCategory == 'Accessories'),
+              _buildCategoryChip(context, 'All', state.currentCategory == 'All'),
+              _buildCategoryChip(context, 'Clothes', state.currentCategory == 'Clothes'),
+              _buildCategoryChip(context, 'Make_Up', state.currentCategory == 'Make_Up'),
+              _buildCategoryChip(context, 'SkinCare', state.currentCategory == 'SkinCare'),
+              _buildCategoryChip(context, 'Accessories', state.currentCategory == 'Accessories'),
             ],
           ),
-        ),
-        Expanded(
-          child: BlocListener<FavoriteBloc, FavoriteState>(
-            listener: (context, state) {
-              if (state is FavoriteError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
-                );
-              }
-            },
-            child: _filteredProducts.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Aucun produit dans cette catégorie',
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.72,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = _filteredProducts[index];
-                      return _ProductCard(
-                        key: ValueKey(product.name),
-                        product: product,
-                        isFavorite: widget.isFavorite(product),
-                        onFavoritePressed: () => widget.onFavoritePressed(product),
-                      );
-                    },
-                  ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildCategoryChip(String label, bool isSelected) {
+  Widget _buildCategoryChip(BuildContext context, String label, bool isSelected) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
         label: Text(label),
         selected: isSelected,
         onSelected: (selected) {
-          setState(() {
-            _selectedCategory = selected ? label : 'All';
-            _filterProducts();
-          });
+          if (selected) {
+            context.read<ProductsBloc>().add(FilterProductsByCategory(label));
+          }
         },
         selectedColor: Colors.blue,
         labelStyle: TextStyle(
@@ -133,7 +72,48 @@ class _ProductListWidgetState extends State<ProductListWidget> {
       ),
     );
   }
+
+  Widget _buildProductGrid(BuildContext context) {
+    return Expanded(
+      child: BlocListener<FavoriteBloc, FavoriteState>(
+        listener: (context, state) {
+          if (state is FavoriteError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        child: products.isEmpty
+            ? const Center(
+                child: Text(
+                  'No products in this category',
+                  style: TextStyle(fontSize: 16),
+                ),
+              )
+            : GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.72,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                ),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return _ProductCard(
+                    key: ValueKey('${product.id}-${product.name}'),
+                    product: product,
+                    isFavorite: isFavorite(product),
+                    onFavoritePressed: () => onFavoritePressed(product),
+                  );
+                },
+              ),
+      ),
+    );
+  }
 }
+
 class _ProductCard extends StatefulWidget {
   final Product product;
   final bool isFavorite;
@@ -149,6 +129,7 @@ class _ProductCard extends StatefulWidget {
   @override
   State<_ProductCard> createState() => _ProductCardState();
 }
+
 
 class _ProductCardState extends State<_ProductCard> {
   late bool _isFavorite;
@@ -178,7 +159,7 @@ class _ProductCardState extends State<_ProductCard> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SizedBox(
-            height: constraints.maxWidth * 1.4, 
+            height: constraints.maxWidth * 1.4,
             child: Padding(
               padding: const EdgeInsets.all(8),
               child: Stack(
@@ -188,7 +169,7 @@ class _ProductCardState extends State<_ProductCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
-                        height: constraints.maxWidth * 0.7, 
+                        height: constraints.maxWidth * 0.7,
                         width: double.infinity,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
@@ -201,9 +182,8 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ),
                       const SizedBox(height: 8),
- 
                       SizedBox(
-                        height: 40, 
+                        height: 40,
                         child: Text(
                           widget.product.name,
                           style: const TextStyle(
@@ -215,7 +195,6 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      
                       Text(
                         '\$${widget.product.price.toStringAsFixed(2)}',
                         style: const TextStyle(
@@ -225,9 +204,8 @@ class _ProductCardState extends State<_ProductCard> {
                         ),
                       ),
                       const Spacer(),
-
                       SizedBox(
-                        height: 24, 
+                        height: 24,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -249,7 +227,6 @@ class _ProductCardState extends State<_ProductCard> {
                       ),
                     ],
                   ),
-
                   Positioned(
                     top: 4,
                     right: 4,
@@ -266,7 +243,7 @@ class _ProductCardState extends State<_ProductCard> {
 
   Widget _buildAddButton(BuildContext context) {
     return IconButton(
-      padding: EdgeInsets.zero, 
+      padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
       icon: const Icon(Icons.add_shopping_cart),
       iconSize: 20,
@@ -286,7 +263,7 @@ class _ProductCardState extends State<_ProductCard> {
   Widget _buildFavoriteButton() {
     return IconButton(
       padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(), 
+      constraints: const BoxConstraints(),
       icon: _isProcessing
           ? const SizedBox(
               width: 20,
@@ -296,7 +273,7 @@ class _ProductCardState extends State<_ProductCard> {
           : Icon(
               _isFavorite ? Icons.favorite : Icons.favorite_border,
               color: _isFavorite ? Colors.red : Colors.grey,
-              size: 20, 
+              size: 20,
             ),
       onPressed: _isProcessing
           ? null

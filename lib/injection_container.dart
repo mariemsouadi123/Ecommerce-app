@@ -31,7 +31,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
-  sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
+sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
   sl.registerFactory(() => CartBloc());
   sl.registerFactory(() => CheckoutBloc(processPayment: sl()));
   sl.registerLazySingleton(() => GetAllProductsUseCase(sl()));
