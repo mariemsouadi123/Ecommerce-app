@@ -1,3 +1,5 @@
+import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:ecommerce_app/features/auth/presentation/pages/login_page.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
 import 'package:ecommerce_app/features/cart/presentation/pages/cart_page.dart';
 import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
@@ -12,7 +14,6 @@ import 'package:ecommerce_app/features/products/presentation/pages/products_page
 import 'package:ecommerce_app/injection_container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +33,14 @@ class MyApp extends StatelessWidget {
     )],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => sl<ProductsBloc>()..add(GetAllProductsEvent())),
+          BlocProvider(
+            create: (_) => sl<AuthBloc>()..add(CheckAuthEvent()),
+            lazy: false, // Important: make sure bloc is created immediately
+          ),
+          BlocProvider(
+            create: (_) => sl<ProductsBloc>()..add(GetAllProductsEvent()),
+            lazy: false,
+          ),
           BlocProvider(create: (_) => sl<CartBloc>()),
           BlocProvider(create: (_) => sl<CheckoutBloc>()),
           BlocProvider(
@@ -47,14 +55,48 @@ class MyApp extends StatelessWidget {
           title: 'E-Commerce App',
           theme: ThemeData(
             primarySwatch: Colors.blue,
+            visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
-          home: const MainPage(),
+          home: const AuthWrapper(),
+          debugShowCheckedModeBanner: false,
         ),
       ),
     );
   }
 }
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthInitial) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (state is Authenticated) {
+          return const MainPage();
+        } else if (state is Unauthenticated) {
+          return  LoginPage();
+        } else if (state is AuthLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (state is AuthError) {
+          // Show login page but also show error
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          });
+          return  LoginPage();
+        }
+        return  LoginPage(); // fallback
+      },
+    );
+  }
+}
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
@@ -67,13 +109,25 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> _pages = [
     const ProductsPage(),
-    const CartPage(), 
+    const CartPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      appBar: AppBar(
+        title: const Text('E-Commerce App'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => context.read<AuthBloc>().add(LogoutEvent()),
+          ),
+        ],
+      ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BlocBuilder<CartBloc, CartState>(
         builder: (context, state) {
           final itemCount = state is CartLoaded ? state.items.length : 0;
@@ -81,7 +135,7 @@ class _MainPageState extends State<MainPage> {
           return BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
-              if (index == 1) { // Index modifié car il n'y a plus que 2 onglets
+              if (index == 1) {
                 context.read<CartBloc>().add(LoadCartEvent());
               }
               setState(() => _currentIndex = index);
@@ -91,7 +145,7 @@ class _MainPageState extends State<MainPage> {
                 icon: Icon(Icons.home),
                 label: 'Products',
               ),
-              BottomNavigationBarItem( 
+              BottomNavigationBarItem(
                 icon: Stack(
                   children: [
                     const Icon(Icons.shopping_cart),

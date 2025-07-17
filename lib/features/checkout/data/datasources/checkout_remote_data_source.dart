@@ -10,4 +10,3 @@ abstract class CheckoutRemoteDataSource {
     required double total,
   });
 }
-

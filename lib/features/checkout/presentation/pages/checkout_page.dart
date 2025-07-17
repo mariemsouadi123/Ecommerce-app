@@ -1,4 +1,5 @@
 import 'package:ecommerce_app/features/cart/domain/entities/cart_item.dart';
+import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
 import 'package:ecommerce_app/features/checkout/domain/entities/PurchaseOrder.dart';
 import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
 import 'package:ecommerce_app/features/checkout/domain/usecases/process_payment.dart';
@@ -7,6 +8,7 @@ import 'package:ecommerce_app/features/checkout/presentation/pages/payment_succe
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+// features/checkout/presentation/pages/checkout_page.dart
 class CheckoutPage extends StatelessWidget {
   final List<CartItem> items;
   final double total;
@@ -24,6 +26,7 @@ class CheckoutPage extends StatelessWidget {
         processPayment: ProcessPayment(
           context.read<CheckoutRepository>(),
         ),
+        cartBloc: context.read<CartBloc>(),
       ),
       child: _CheckoutView(items: items, total: total),
     );

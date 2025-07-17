@@ -10,32 +10,34 @@ class CheckoutRepositoryImpl implements CheckoutRepository {
 
   CheckoutRepositoryImpl({required this.remoteDataSource});
 
+  @override
   Future<Either<Failure, PurchaseOrder>> processPayment({
     required List<CartItem> items,
     required double total,
   }) async {
-    final failureOrResponse = await remoteDataSource.processOrder(
-      items: items,
-      total: total,
-    );
+    try {
+      final result = await remoteDataSource.processOrder(
+        items: items,
+        total: total,
+      );
 
-    return failureOrResponse.fold(
-      (failure) => Left(failure),
-      (response) {
-        try {
-          final orderData = response['order'];
-          final order = PurchaseOrder(
-            id: orderData['id'],
-            items: items,
-            total: orderData['total'],
-            date: DateTime.parse(orderData['createdAt']),
-            status: orderData['status'],
-          );
-          return Right(order);
-        } catch (e) {
-          return Left(ServerFailure(message: 'Failed to parse order data'));
-        }
-      },
-    );
+      return result.fold(
+        (failure) => Left(failure),
+        (response) {
+          if (response['success'] == true) {
+            final order = PurchaseOrder.fromJson(response['order']);
+            return Right(order);
+          } else {
+            return Left(ServerFailure(
+              message: response['error'] ?? 'Payment failed'
+            ));
+          }
+        },
+      );
+    } catch (e) {
+      return Left(ServerFailure(
+        message: 'Failed to process payment: ${e.toString()}'
+      ));
+    }
   }
 }

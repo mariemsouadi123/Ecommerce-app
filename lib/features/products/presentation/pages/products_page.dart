@@ -20,8 +20,7 @@ class ProductsPage extends StatelessWidget {
             builder: (context, state) {
               final favoritesCount = state is FavoritesLoaded 
                   ? state.favorites.length 
-                  : 0;
-              
+                  : 0;  
               return Stack(
                 alignment: Alignment.center,
                 children: [
@@ -104,14 +103,12 @@ class ProductsPage extends StatelessWidget {
           } else if (state is ProductsLoaded) {
             if (state.allProducts.isEmpty) {
               return const Center(child: Text('No products available'));
-            }
-            
+            }   
             return BlocBuilder<FavoriteBloc, FavoriteState>(
               builder: (context, favoriteState) {
                 final favorites = favoriteState is FavoritesLoaded 
                     ? favoriteState.favorites 
-                    : <FavoriteProduct>[];
-                
+                    : <FavoriteProduct>[];  
                 return Column(
                   children: [
                     if (state.currentSearchQuery.isNotEmpty)

@@ -1,4 +1,12 @@
 import 'package:ecommerce_app/core/network/network_info.dart';
+import 'package:ecommerce_app/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:ecommerce_app/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:ecommerce_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/get_current_user_usecase.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/login_usecase.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/logout_usecase.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/register_usecase.dart';
+import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ecommerce_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ecommerce_app/features/cart/domain/repositories/cart_repository.dart';
 import 'package:ecommerce_app/features/cart/domain/usecases/add_product_to_crt.dart';
@@ -33,7 +41,7 @@ final sl = GetIt.instance;
 Future<void> init() async {
 sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
   sl.registerFactory(() => CartBloc());
-  sl.registerFactory(() => CheckoutBloc(processPayment: sl()));
+  sl.registerFactory(() => CheckoutBloc(processPayment: sl(), cartBloc: sl()));
   sl.registerLazySingleton(() => GetAllProductsUseCase(sl()));
   sl.registerLazySingleton(() => AddProductToCartUseCase(sl()));
   sl.registerLazySingleton(() => GetCartItemsUseCase(sl()));
@@ -94,4 +102,31 @@ sl.registerFactory<FavoriteBloc>(
     removeFromFavorites: sl(),
   ),
 );
+
+
+// Auth Feature
+  // Bloc
+  sl.registerFactory(() => AuthBloc(
+    loginUseCase: sl(),
+    registerUseCase: sl(),
+    getCurrentUserUseCase: sl(),
+    logoutUseCase: sl(),
+  ));
+
+  // Use cases
+  sl.registerLazySingleton(() => LoginUseCase(sl()));
+  sl.registerLazySingleton(() => RegisterUseCase(sl()));
+  sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
+  sl.registerLazySingleton(() => LogoutUseCase(sl()));
+
+  // Repository
+  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  // Data sources
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(client: sl(), baseUrl: 'http://10.0.2.2:5000', networkInfo: sl()),
+  );
 }

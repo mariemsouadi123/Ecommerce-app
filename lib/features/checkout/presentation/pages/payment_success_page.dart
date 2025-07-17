@@ -1,3 +1,4 @@
+// features/checkout/presentation/pages/payment_success_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
@@ -12,6 +13,7 @@ class PaymentSuccessPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<CartBloc, CartState>(
       listener: (context, state) {
+        context.read<CartBloc>().add(ClearCartEvent());
       },
       child: Scaffold(
         appBar: AppBar(
@@ -34,7 +36,6 @@ class PaymentSuccessPage extends StatelessWidget {
               const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: () {
-                  context.read<CartBloc>().add(ClearCartEvent());
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     '/', 
                     (Route<dynamic> route) => false,

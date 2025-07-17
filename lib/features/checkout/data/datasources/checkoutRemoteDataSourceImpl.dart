@@ -17,14 +17,9 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
     required double total,
   }) async {
     try {
-      for (final item in items) {
-        if (item.product.id.isEmpty || !RegExp(r'^[a-f\d]{24}$').hasMatch(item.product.id)) {
-          return Left(ServerFailure(message: 'Invalid product ID: ${item.product.id}'));
-        }
-      }
-
       final response = await client.post(
         Uri.parse('$baseUrl/api/orders'),
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'items': items.map((item) => {
                 'productId': item.product.id,
@@ -32,7 +27,6 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
               }).toList(),
           'total': total,
         }),
-        headers: {'Content-Type': 'application/json'},
       );
 
       final responseBody = json.decode(response.body);
@@ -40,7 +34,9 @@ class CheckoutRemoteDataSourceImpl implements CheckoutRemoteDataSource {
       if (response.statusCode == 201) {
         return Right(responseBody);
       } else {
-        return Left(ServerFailure(message: responseBody['error'] ?? 'Payment failed'));
+        return Left(ServerFailure(
+          message: responseBody['error'] ?? 'Payment failed with status ${response.statusCode}'
+        ));
       }
     } catch (e) {
       return Left(ServerFailure(message: 'Network error: ${e.toString()}'));
