@@ -11,13 +11,18 @@ import 'package:ecommerce_app/features/favorites/domain/usecases/remove_from_fav
 import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
 import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
 import 'package:ecommerce_app/features/products/presentation/pages/products_page.dart';
+import 'package:ecommerce_app/firebase_options.dart';
 import 'package:ecommerce_app/injection_container.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await init();
+  await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+);
   runApp(const MyApp());
 }
 
@@ -35,7 +40,7 @@ class MyApp extends StatelessWidget {
         providers: [
           BlocProvider(
             create: (_) => sl<AuthBloc>()..add(CheckAuthEvent()),
-            lazy: false, // Important: make sure bloc is created immediately
+            lazy: false, 
           ),
           BlocProvider(
             create: (_) => sl<ProductsBloc>()..add(GetAllProductsEvent()),
@@ -52,11 +57,6 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
-          title: 'E-Commerce App',
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-            visualDensity: VisualDensity.adaptivePlatformDensity,
-          ),
           home: const AuthWrapper(),
           debugShowCheckedModeBanner: false,
         ),
@@ -116,7 +116,6 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('E-Commerce App'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

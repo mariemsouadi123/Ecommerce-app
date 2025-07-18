@@ -1,3 +1,4 @@
+import 'package:ecommerce_app/core/errors/failures.dart';
 import 'package:equatable/equatable.dart';
 
 // Base class for all auth failures
@@ -28,4 +29,8 @@ class RegistrationFailure extends AuthFailure {
 
 class LogoutFailure extends AuthFailure {
   const LogoutFailure() : super('Failed to logout');
+}
+class CanceledByUserFailure extends Failure {
+  @override
+  List<Object?> get props => [];
 }

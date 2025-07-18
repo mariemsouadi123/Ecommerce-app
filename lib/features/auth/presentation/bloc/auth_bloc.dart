@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:ecommerce_app/core/errors/auth_failures.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/SignInWithGoogleUseCase.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/user_entity.dart';
@@ -17,20 +18,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final RegisterUseCase registerUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
   final LogoutUseCase logoutUseCase;
-
+  final SignInWithGoogleUseCase signInWithGoogleUseCase;
 
   AuthBloc({
     required this.loginUseCase,
     required this.registerUseCase,
     required this.getCurrentUserUseCase,
     required this.logoutUseCase,
+    required this.signInWithGoogleUseCase,
   }) : super(AuthInitial()) {
     on<LoginEvent>(_onLogin);
     on<RegisterEvent>(_onRegister);
     on<GetCurrentUserEvent>(_onGetCurrentUser);
     on<LogoutEvent>(_onLogout);
-    on<CheckAuthEvent>(_onCheckAuth); // Add this handler
-
+    on<CheckAuthEvent>(_onCheckAuth);
+    on<SignInWithGoogleEvent>(_onSignInWithGoogle);
   }
 
   Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
@@ -65,11 +67,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       (_) => emit(Unauthenticated()),
     );
   }
- Future<void> _onCheckAuth(CheckAuthEvent event, Emitter<AuthState> emit) async {
+
+  Future<void> _onCheckAuth(CheckAuthEvent event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     final result = await getCurrentUserUseCase();
     emit(_mapFailureOrUserToState(result));
   }
+
+  // Update your _onSignInWithGoogle method:
+Future<void> _onSignInWithGoogle(SignInWithGoogleEvent event, Emitter<AuthState> emit) async {
+  emit(AuthLoading(isGoogleSignIn: true));
+  final result = await signInWithGoogleUseCase();
+  result.fold(
+    (failure) => emit(AuthError(_mapFailureToMessage(failure), isGoogleSignIn: true)),
+    (user) => emit(Authenticated(user: user)),
+  );
+}
+
   AuthState _mapFailureOrUserToState(Either<Failure, UserEntity> result) {
     return result.fold(
       (failure) => AuthError(_mapFailureToMessage(failure)),

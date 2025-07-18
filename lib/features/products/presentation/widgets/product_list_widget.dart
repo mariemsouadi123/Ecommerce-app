@@ -6,6 +6,7 @@ import 'package:ecommerce_app/features/products/presentation/blocs/products/prod
 import 'package:ecommerce_app/features/products/presentation/pages/products_detailed_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ProductListWidget extends StatelessWidget {
   final List<Product> products;
@@ -26,7 +27,7 @@ class ProductListWidget extends StatelessWidget {
         _buildCategoryFilter(context),
         _buildProductGrid(context),
       ],
-    );
+    ).animate().fadeIn(duration: 500.ms);
   }
 
   Widget _buildCategoryFilter(BuildContext context) {
@@ -39,13 +40,7 @@ class ProductListWidget extends StatelessWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildCategoryChip(context, 'All', state.currentCategory == 'All'),
-              _buildCategoryChip(context, 'Clothes', state.currentCategory == 'Clothes'),
-              _buildCategoryChip(context, 'Make_Up', state.currentCategory == 'Make_Up'),
-              _buildCategoryChip(context, 'SkinCare', state.currentCategory == 'SkinCare'),
-              _buildCategoryChip(context, 'Accessories', state.currentCategory == 'Accessories'),
-            ],
+           
           ),
         );
       },
@@ -63,9 +58,9 @@ class ProductListWidget extends StatelessWidget {
             context.read<ProductsBloc>().add(FilterProductsByCategory(label));
           }
         },
-        selectedColor: Colors.blue,
+        selectedColor: Theme.of(context).primaryColor,
         labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Colors.black,
+          color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -80,16 +75,25 @@ class ProductListWidget extends StatelessWidget {
         listener: (context, state) {
           if (state is FavoriteError) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
+              SnackBar(
+                content: Text(state.message),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
             );
           }
         },
         child: products.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
                   'No products in this category',
-                  style: TextStyle(fontSize: 16),
-                ),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).hintColor,
+                  ),
+                ).animate().shake(),
               )
             : GridView.builder(
                 padding: const EdgeInsets.all(16),
@@ -107,7 +111,12 @@ class ProductListWidget extends StatelessWidget {
                     product: product,
                     isFavorite: isFavorite(product),
                     onFavoritePressed: () => onFavoritePressed(product),
-                  );
+                  ).animate(
+                    delay: (100 * index).ms,
+                  ).slideX(
+                    begin: 0.2,
+                    curve: Curves.easeOut,
+                  ).fadeIn();
                 },
               ),
       ),
@@ -134,6 +143,7 @@ class _ProductCard extends StatefulWidget {
 class _ProductCardState extends State<_ProductCard> {
   late bool _isFavorite;
   bool _isProcessing = false;
+  bool _isHovering = false;
 
   @override
   void initState() {
@@ -151,101 +161,115 @@ class _ProductCardState extends State<_ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductDetailsPage(product: widget.product),
-          ),
-        );
-      },
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SizedBox(
-              height: constraints.maxWidth * 1.4,
-              child: Padding(
-                padding: const EdgeInsets.all(8),
-                child: Stack(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          height: constraints.maxWidth * 0.7,
-                          width: double.infinity,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              widget.product.imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => 
-                                const Icon(Icons.image_not_supported),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 40,
-                          child: Text(
-                            widget.product.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '\$${widget.product.price.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          height: 24,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  'Stock: ${widget.product.stock}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: widget.product.stock > 0 
-                                        ? Colors.green[600]
-                                        : Colors.red[600],
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              _buildAddButton(context),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: _buildFavoriteButton(),
-                    ),
-                  ],
-                ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovering = true),
+      onExit: (_) => setState(() => _isHovering = false),
+      child: AnimatedScale(
+        scale: _isHovering ? 1.03 : 1.0,
+        duration: 200.ms,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                pageBuilder: (_, __, ___) => ProductDetailsPage(product: widget.product),
+                transitionsBuilder: (_, animation, __, child) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
               ),
             );
           },
+          child: Card(
+            elevation: _isHovering ? 6 : 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SizedBox(
+                  height: constraints.maxWidth * 1.4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Stack(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              height: constraints.maxWidth * 0.7,
+                              width: double.infinity,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  widget.product.imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => 
+                                    const Icon(Icons.image_not_supported),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 40,
+                              child: Text(
+                                widget.product.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '\$${widget.product.price.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                            const Spacer(),
+                            SizedBox(
+                              height: 24,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      'Stock: ${widget.product.stock}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: widget.product.stock > 0 
+                                            ? Colors.green[600]
+                                            : Colors.red[600],
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  _buildAddButton(context),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: _buildFavoriteButton(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
@@ -264,6 +288,10 @@ class _ProductCardState extends State<_ProductCard> {
           SnackBar(
             content: Text('Added ${widget.product.name} to cart'),
             duration: const Duration(milliseconds: 800),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       },

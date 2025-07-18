@@ -2,6 +2,7 @@ import 'package:ecommerce_app/core/network/network_info.dart';
 import 'package:ecommerce_app/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:ecommerce_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:ecommerce_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/SignInWithGoogleUseCase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/login_usecase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/logout_usecase.dart';
@@ -32,6 +33,7 @@ import 'package:ecommerce_app/features/products/domain/repositories/product_repo
 import 'package:ecommerce_app/features/products/domain/usecases/get_all_products.dart';
 import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,6 +113,8 @@ sl.registerFactory<FavoriteBloc>(
     registerUseCase: sl(),
     getCurrentUserUseCase: sl(),
     logoutUseCase: sl(),
+    signInWithGoogleUseCase: sl(), 
+
   ));
 
   // Use cases
@@ -118,11 +122,18 @@ sl.registerFactory<FavoriteBloc>(
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
+  sl.registerLazySingleton(() => SignInWithGoogleUseCase(sl())); // Add this line
+
 
   // Repository
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
     remoteDataSource: sl(),
     networkInfo: sl(),
+     googleSignIn: GoogleSignIn(
+    scopes: ['email', 'profile'],
+    signInOption: SignInOption.standard,
+  ), // Add this line
+
   ));
 
   // Data sources

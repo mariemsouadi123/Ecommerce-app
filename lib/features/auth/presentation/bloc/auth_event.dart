@@ -41,5 +41,6 @@ class RegisterEvent extends AuthEvent {
 
 class GetCurrentUserEvent extends AuthEvent {}
 class CheckAuthEvent extends AuthEvent {}
+class SignInWithGoogleEvent extends AuthEvent {}
 
 class LogoutEvent extends AuthEvent {}

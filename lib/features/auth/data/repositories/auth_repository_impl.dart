@@ -7,15 +7,19 @@ import 'package:ecommerce_app/core/network/network_info.dart';
 import 'package:ecommerce_app/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:ecommerce_app/features/auth/domain/entities/user_entity.dart';
 import 'package:ecommerce_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;
+  final GoogleSignIn _googleSignIn;
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.networkInfo,
-  });
+    required GoogleSignIn googleSignIn,
+  }) : _googleSignIn = googleSignIn;
 
   @override
   Future<Either<Failure, UserEntity>> login(String email, String password) async {
@@ -61,27 +65,78 @@ class AuthRepositoryImpl implements AuthRepository {
     });
   }
 
- Future<Either<Failure, T>> _handleAuthRequest<T>(Future<T> Function() request) async {
-  try {
-    final response = await request();
-    return Right(response);
-  } on UserAlreadyExistsException {
-    return  Left(EmailAlreadyInUseFailure() as Failure);
-  } on InvalidCredentialsException {
-    return  Left(InvalidCredentialsFailure() as Failure);
-  } on UnauthorizedException {
-    return  Left(UnauthorizedFailure() as Failure);
-  } on NetworkException {
-    return  Left(OfflineFailure());
-  } on ServerException catch (e) {
-    return Left(ServerFailure(message: e.message));
-  } on NotFoundException {
-    return  Left(NotFoundFailure());
-  } on TokenExpiredException {
-    return  Left(UnauthorizedFailure() as Failure);
-  } on SessionExpiredException {
-    return  Left(UnauthorizedFailure() as Failure);
-  } 
-}
-}
+  @override
+  Future<Either<Failure, UserEntity>> signInWithGoogle() async {
+    if (!await networkInfo.isConnected) {
+      return Left(OfflineFailure());
+    }
 
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        return Left(CanceledByUserFailure());
+      }
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Create a new credential
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the Google credential
+      final UserCredential userCredential = 
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Convert Firebase User to your UserEntity
+      final user = userCredential.user;
+      if (user != null) {
+        return Right(UserEntity(
+          id: user.uid,
+          name: user.displayName ?? '',
+          email: user.email ?? '',
+          // Add other fields as needed
+        ));
+      } else {
+        return Left(ServerFailure(message: 'No user returned from Google Sign-In'));
+      }
+    } on FirebaseAuthException catch (e) {
+      return Left(ServerFailure(message: e.message ?? 'Google Sign-In failed'));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Unexpected error during Google Sign-In: ${e.toString()}'));
+    }
+  }
+
+  Future<Either<Failure, T>> _handleAuthRequest<T>(Future<T> Function() request) async {
+    try {
+      if (!await networkInfo.isConnected) {
+        return Left(OfflineFailure());
+      }
+      
+      final response = await request();
+      return Right(response);
+    } on UserAlreadyExistsException {
+      return Left(EmailAlreadyInUseFailure() as Failure);
+    } on InvalidCredentialsException {
+      return Left(InvalidCredentialsFailure() as Failure);
+    } on UnauthorizedException {
+      return Left(UnauthorizedFailure() as Failure);
+    } on NetworkException {
+      return Left(OfflineFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NotFoundException {
+      return Left(NotFoundFailure());
+    } on TokenExpiredException {
+      return Left(UnauthorizedFailure() as Failure);
+    } on SessionExpiredException {
+      return Left(UnauthorizedFailure() as Failure);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Unexpected error: ${e.toString()}'));
+    }
+  }
+}
