@@ -115,14 +115,6 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthBloc>().add(LogoutEvent()),
-          ),
-        ],
-      ),
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
@@ -134,6 +126,10 @@ class _MainPageState extends State<MainPage> {
           return BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (index) {
+              if (index == 2) { // Logout button index
+                context.read<AuthBloc>().add(LogoutEvent());
+                return;
+              }
               if (index == 1) {
                 context.read<CartBloc>().add(LoadCartEvent());
               }
@@ -170,6 +166,10 @@ class _MainPageState extends State<MainPage> {
                   ],
                 ),
                 label: 'Cart',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.logout),
+                label: 'Logout',
               ),
             ],
           );

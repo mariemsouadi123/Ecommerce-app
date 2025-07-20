@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ecommerce_app/features/favorites/domain/entities/favorite_product.dart';
 import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
 import 'package:ecommerce_app/features/favorites/presentation/pages/favorites_page.dart';
@@ -31,23 +32,8 @@ class ProductsPage extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              // Logo at the top
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: CachedNetworkImage(
-                  imageUrl: 'https://maison-kayser.com/wp-content/themes/kayser/images/international_logo.png?x48382',
-                  height: 30,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => const SizedBox(
-                    height: 30,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: (context, url, error) => const Icon(Icons.error),
-                ).animate().fadeIn(duration: 300.ms),
-              ),
-              
-              // App Bar with bakery styling
-              _buildAppBar(context),
+              // Top section with logo, title and favorite button
+              _buildTopSection(context),
               
               // Main content area
               Expanded(
@@ -64,87 +50,50 @@ class ProductsPage extends StatelessWidget {
     ).animate().fadeIn(duration: 500.ms);
   }
 
-  Widget _buildContentSection(BuildContext context, ProductsState state) {
-    if (state is ProductsLoading) {
-      return Center(
-        child: CircularProgressIndicator(
-          color: Colors.brown.shade700,
-        ).animate(
-          onPlay: (controller) => controller.repeat(),
-        ).rotate(),
-      );
-    }
-
-    if (state is ProductsLoaded) {
-      if (state.allProducts.isEmpty) {
-        return Center(
-          child: Text(
-            'No delicious treats available yet!',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.brown.shade800,
-            ),
-          ).animate().shake(),
-        );
-      }
-
-      return BlocBuilder<FavoriteBloc, FavoriteState>(
-        builder: (context, favoriteState) {
-          final favorites = favoriteState is FavoritesLoaded 
-              ? favoriteState.favorites 
-              : <FavoriteProduct>[];
-              
-          return Column(
+  Widget _buildTopSection(BuildContext context) {
+    return Column(
+      children: [
+        // Logo, title and favorite button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
             children: [
-              // Search and filter section
-              _buildSearchFilterSection(context, state),
-              
-              // Product grid
+              // Logo
+              CachedNetworkImage(
+                imageUrl: 'https://maison-kayser.com/wp-content/themes/kayser/images/international_logo.png',
+                height: 40,
+                width: 40,
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const SizedBox(
+                  height: 30,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                errorWidget: (context, url, error) => const Icon(Icons.error),
+              ),
+              const SizedBox(width: 8),
+              // Title
               Expanded(
-                child: ProductListWidget(
-                  products: state.filteredProducts,
-                  isFavorite: (product) => favorites.any((fav) => fav.product.id == product.id),
-                  onFavoritePressed: (product) => _handleFavoriteAction(context, product, favorites),
+                child: Text(
+                  'Our Bakery Treats',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown.shade800,
+                    fontFamily: 'Pacifico',
+                  ),
                 ),
               ),
+              // Favorite button
+              _buildFavoriteButton(context),
             ],
-          );
-        },
-      );
-    }
-
-    return Center(
-      child: CircularProgressIndicator(
-        color: Colors.brown.shade700,
-      ),
-    );
-  }
-
-  void _handleFavoriteAction(BuildContext context, Product product, List<FavoriteProduct> favorites) {
-    final isFav = favorites.any((fav) => fav.product.id == product.id);
-    if (isFav) {
-      context.read<FavoriteBloc>().add(RemoveFromFavoritesEvent(product));
-    } else {
-      context.read<FavoriteBloc>().add(AddToFavoritesEvent(product));
-    }
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: Text(
-        'Our Bakery Treats',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Colors.brown.shade800,
-          fontFamily: 'Pacifico',
+          ),
         ),
-      ).animate().fadeIn(delay: 300.ms).slideY(begin: -0.2),
-      centerTitle: true,
-      actions: [
-        _buildFavoriteButton(context),
+        
+        // Search bar with extra bottom padding
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: _buildSearchBar(context),
+        ),
       ],
     );
   }
@@ -215,17 +164,73 @@ class ProductsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchFilterSection(BuildContext context, ProductsLoaded state) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Column(
-        children: [
-          _buildSearchBar(context),
-          _buildCategoryChips(context, state),
-          if (state.currentSearchQuery.isNotEmpty) _buildResultsCount(state),
-        ],
+
+  Widget _buildContentSection(BuildContext context, ProductsState state) {
+    if (state is ProductsLoading) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: Colors.brown.shade700,
+        ).animate(
+          onPlay: (controller) => controller.repeat(),
+        ).rotate(),
+      );
+    }
+
+    if (state is ProductsLoaded) {
+      if (state.allProducts.isEmpty) {
+        return Center(
+          child: Text(
+            'No delicious treats available yet!',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.brown.shade800,
+            ),
+          ).animate().shake(),
+        );
+      }
+
+      return BlocBuilder<FavoriteBloc, FavoriteState>(
+        builder: (context, favoriteState) {
+          final favorites = favoriteState is FavoritesLoaded 
+              ? favoriteState.favorites 
+              : <FavoriteProduct>[];
+              
+          return Column(
+            children: [
+              // Categories with top padding
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: _buildCategoryChips(context, state),
+              ),
+              
+              // Product grid
+              Expanded(
+                child: ProductListWidget(
+                  products: state.filteredProducts,
+                  isFavorite: (product) => favorites.any((fav) => fav.product.id == product.id),
+                  onFavoritePressed: (product) => _handleFavoriteAction(context, product, favorites),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    return Center(
+      child: CircularProgressIndicator(
+        color: Colors.brown.shade700,
       ),
     );
+  }
+
+  void _handleFavoriteAction(BuildContext context, Product product, List<FavoriteProduct> favorites) {
+    final isFav = favorites.any((fav) => fav.product.id == product.id);
+    if (isFav) {
+      context.read<FavoriteBloc>().add(RemoveFromFavoritesEvent(product));
+    } else {
+      context.read<FavoriteBloc>().add(AddToFavoritesEvent(product));
+    }
   }
 
   Widget _buildSearchBar(BuildContext context) {
@@ -238,8 +243,7 @@ class ProductsPage extends StatelessWidget {
             color: Colors.brown.shade200,
             blurRadius: 8,
             offset: const Offset(0, 4),
-          ),
-        ],
+      )],
       ),
       child: TextField(
         decoration: InputDecoration(
@@ -260,10 +264,10 @@ class ProductsPage extends StatelessWidget {
 
   Widget _buildCategoryChips(BuildContext context, ProductsLoaded state) {
     return SizedBox(
-      height: 60,
+      height: 50,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
           'All',
           'Reception',
@@ -279,20 +283,6 @@ class ProductsPage extends StatelessWidget {
         .slideX(begin: 0.5, end: 0, curve: Curves.easeOut)
         .fadeIn(),
       ),
-    );
-  }
-
-  Widget _buildResultsCount(ProductsLoaded state) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(
-        'Found ${state.filteredProducts.length} delicious items',
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.brown.shade700,
-          fontStyle: FontStyle.italic,
-        ),
-      ).animate().fadeIn(),
     );
   }
 
@@ -320,6 +310,20 @@ class ProductsPage extends StatelessWidget {
         elevation: 2,
         shadowColor: Colors.brown.shade300,
       ),
+    );
+  }
+
+  Widget _buildResultsCount(ProductsLoaded state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Text(
+        'Found ${state.filteredProducts.length} delicious items',
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.brown.shade700,
+          fontStyle: FontStyle.italic,
+        ),
+      ).animate().fadeIn(),
     );
   }
 }

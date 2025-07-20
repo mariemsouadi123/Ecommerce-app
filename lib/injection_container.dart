@@ -132,7 +132,7 @@ sl.registerFactory<FavoriteBloc>(
      googleSignIn: GoogleSignIn(
     scopes: ['email', 'profile'],
     signInOption: SignInOption.standard,
-  ), // Add this line
+  ), 
 
   ));
 

@@ -47,27 +47,27 @@ class ProductListWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryChip(BuildContext context, String label, bool isSelected) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (selected) {
-          if (selected) {
-            context.read<ProductsBloc>().add(FilterProductsByCategory(label));
-          }
-        },
-        selectedColor: Theme.of(context).primaryColor,
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ),
-    );
-  }
+  // Widget _buildCategoryChip(BuildContext context, String label, bool isSelected) {
+  //   return Padding(
+  //     padding: const EdgeInsets.only(right: 8),
+  //     child: ChoiceChip(
+  //       label: Text(label),
+  //       selected: isSelected,
+  //       onSelected: (selected) {
+  //         if (selected) {
+  //           context.read<ProductsBloc>().add(FilterProductsByCategory(label));
+  //         }
+  //       },
+  //       selectedColor: Theme.of(context).primaryColor,
+  //       labelStyle: TextStyle(
+  //         color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
+  //       ),
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(20),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildProductGrid(BuildContext context) {
     return Expanded(
