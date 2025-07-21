@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dartz/dartz.dart';
 import 'package:ecommerce_app/core/errors/auth_failures.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/SignInWithGoogleUseCase.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/update_profile.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/user_entity.dart';
@@ -19,13 +20,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GetCurrentUserUseCase getCurrentUserUseCase;
   final LogoutUseCase logoutUseCase;
   final SignInWithGoogleUseCase signInWithGoogleUseCase;
-
+  final UpdateProfileUseCase updateProfileUseCase;
   AuthBloc({
     required this.loginUseCase,
     required this.registerUseCase,
     required this.getCurrentUserUseCase,
     required this.logoutUseCase,
     required this.signInWithGoogleUseCase,
+    required this.updateProfileUseCase, // Add this
+
   }) : super(AuthInitial()) {
     on<LoginEvent>(_onLogin);
     on<RegisterEvent>(_onRegister);
@@ -33,6 +36,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutEvent>(_onLogout);
     on<CheckAuthEvent>(_onCheckAuth);
     on<SignInWithGoogleEvent>(_onSignInWithGoogle);
+  // Add this to your AuthBloc event handlers
+    on<UpdateProfileEvent>(_onUpdateProfile);
   }
 
   Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
@@ -58,7 +63,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await getCurrentUserUseCase();
     emit(_mapFailureOrUserToState(result));
   }
-
+Future<void> _onUpdateProfile(
+    UpdateProfileEvent event, 
+    Emitter<AuthState> emit
+  ) async {
+    emit(AuthLoading());
+    final result = await updateProfileUseCase(event.user);
+    emit(_mapFailureOrUserToState(result));
+  }
   Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     final result = await logoutUseCase();

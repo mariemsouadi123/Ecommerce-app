@@ -1,5 +1,6 @@
 import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ecommerce_app/features/auth/presentation/pages/login_page.dart';
+import 'package:ecommerce_app/features/auth/presentation/pages/profile_page.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
 import 'package:ecommerce_app/features/cart/presentation/pages/cart_page.dart';
 import 'package:ecommerce_app/features/checkout/domain/repositories/checkout_repository.dart';
@@ -115,6 +116,22 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('E-Commerce App'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfilePage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,

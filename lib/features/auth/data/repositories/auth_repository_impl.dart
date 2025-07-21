@@ -21,14 +21,30 @@ class AuthRepositoryImpl implements AuthRepository {
     required GoogleSignIn googleSignIn,
   }) : _googleSignIn = googleSignIn;
 
-  @override
-  Future<Either<Failure, UserEntity>> login(String email, String password) async {
-    return await _handleAuthRequest(() async {
-      final userModel = await remoteDataSource.login(email, password);
-      return userModel.toEntity();
-    });
+ @override
+Future<Either<Failure, UserEntity>> login(String email, String password) async {
+  try {
+    print('[DEBUG] Starting login process for email: $email');
+    final userModel = await remoteDataSource.login(email, password);
+    print('[DEBUG] Login successful for user: ${userModel.email}');
+    return Right(userModel.toEntity());
+  } on UnauthorizedException {
+    print('[WARNING] Invalid credentials for email: $email');
+    return Left(InvalidCredentialsFailure());
+  } on BadRequestException catch (e) {
+    print('[ERROR] Bad request: ${e.message}');
+    return Left(ServerFailure(message: e.message));
+  } on ServerException catch (e) {
+    print('[ERROR] Server error: ${e.message}');
+    return Left(ServerFailure(message: e.message));
+  } on NetworkException {
+    print('[ERROR] Network error');
+    return Left(OfflineFailure());
+  } catch (e) {
+    print('[ERROR] Unexpected login error: $e');
+    return Left(ServerFailure(message: 'Login failed: ${e.toString()}'));
   }
-
+}
   @override
   Future<Either<Failure, UserEntity>> register(
     String name,
@@ -110,33 +126,39 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(message: 'Unexpected error during Google Sign-In: ${e.toString()}'));
     }
   }
-
-  Future<Either<Failure, T>> _handleAuthRequest<T>(Future<T> Function() request) async {
-    try {
-      if (!await networkInfo.isConnected) {
-        return Left(OfflineFailure());
-      }
-      
-      final response = await request();
-      return Right(response);
-    } on UserAlreadyExistsException {
-      return Left(EmailAlreadyInUseFailure() as Failure);
-    } on InvalidCredentialsException {
-      return Left(InvalidCredentialsFailure() as Failure);
-    } on UnauthorizedException {
-      return Left(UnauthorizedFailure() as Failure);
-    } on NetworkException {
-      return Left(OfflineFailure());
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message));
-    } on NotFoundException {
-      return Left(NotFoundFailure());
-    } on TokenExpiredException {
-      return Left(UnauthorizedFailure() as Failure);
-    } on SessionExpiredException {
-      return Left(UnauthorizedFailure() as Failure);
-    } catch (e) {
-      return Left(ServerFailure(message: 'Unexpected error: ${e.toString()}'));
-    }
+  @override
+  Future<Either<Failure, UserEntity>> updateProfile(UserEntity user) async {
+    return await _handleAuthRequest(() async {
+      final userModel = await remoteDataSource.updateProfile(user);
+      return userModel.toEntity();
+    });
   }
+  Future<Either<Failure, T>> _handleAuthRequest<T>(Future<T> Function() request) async {
+  try {
+    if (!await networkInfo.isConnected) {
+      return Left(OfflineFailure());
+    }
+    
+    final response = await request();
+    return Right(response);
+  } on UserAlreadyExistsException {
+    return Left(EmailAlreadyInUseFailure());
+  } on InvalidCredentialsException {
+    return Left(InvalidCredentialsFailure());
+  } on UnauthorizedException {
+    return Left(UnauthorizedFailure());
+  } on NetworkException {
+    return Left(OfflineFailure());
+  } on ServerException catch (e) {
+    return Left(ServerFailure(message: e.message));
+  } on NotFoundException {
+    return Left(NotFoundFailure());
+  } on TokenExpiredException {
+    return Left(UnauthorizedFailure());
+  } on SessionExpiredException {
+    return Left(UnauthorizedFailure());
+  } catch (e) {
+    return Left(ServerFailure(message: 'Unexpected error: ${e.toString()}'));
+  }
+}
 }

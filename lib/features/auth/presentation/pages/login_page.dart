@@ -80,9 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                     .fadeIn(),
                     
                     const SizedBox(height: 30),
-                    
-                    // Title with animation
-                    Text('Welcome Back',
+                     Text('Welcome Back',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -133,30 +131,30 @@ class _LoginPageState extends State<LoginPage> {
                     
                     // Login button with animation
                     BlocListener<AuthBloc, AuthState>(
-                      listener: (context, state) {
-                        if (state is AuthLoading && !state.isGoogleSignIn) {
-                          setState(() => _isEmailLoading = true);
-                        } else if (state is! AuthLoading) {
-                          setState(() => _isEmailLoading = false);
-                        }
-                        if (state is Authenticated) {
-                          Navigator.pop(context);
-                        }
-                        if (state is AuthError && !state.isGoogleSignIn) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(state.message)),
-                          );
-                        }
-                      },
-                      child: ElevatedButton(
-                        onPressed: _isEmailLoading ? null : () {
-                          if (_formKey.currentState?.validate() ?? false) {
-                            context.read<AuthBloc>().add(LoginEvent(
-                              email: _emailController.text,
-                              password: _passwordController.text,
-                            ));
-                          }
-                        },
+  listener: (context, state) {
+    if (state is AuthLoading && !state.isGoogleSignIn) {
+      setState(() => _isEmailLoading = true);
+    } else if (state is Authenticated) {
+      Navigator.pop(context);
+    } else if (state is AuthError) {
+      setState(() => _isEmailLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(state.message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  },
+  child: ElevatedButton(
+    onPressed: _isEmailLoading ? null : () {
+      if (_formKey.currentState?.validate() ?? false) {
+        context.read<AuthBloc>().add(LoginEvent(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        ));
+      }
+    },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.brown.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 16),

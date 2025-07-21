@@ -42,5 +42,12 @@ class RegisterEvent extends AuthEvent {
 class GetCurrentUserEvent extends AuthEvent {}
 class CheckAuthEvent extends AuthEvent {}
 class SignInWithGoogleEvent extends AuthEvent {}
+class UpdateProfileEvent extends AuthEvent {
+  final UserEntity user;
 
+  const UpdateProfileEvent(this.user);
+
+  @override
+  List<Object> get props => [user];
+}
 class LogoutEvent extends AuthEvent {}

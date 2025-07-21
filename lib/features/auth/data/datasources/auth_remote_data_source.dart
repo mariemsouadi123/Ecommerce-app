@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:ecommerce_app/core/errors/auth_exceptions.dart';
 import 'package:ecommerce_app/core/errors/exception.dart';
 import 'package:ecommerce_app/features/auth/data/models/use_model.dart';
+import 'package:ecommerce_app/features/auth/domain/entities/auth_token_provider.dart';
+import 'package:ecommerce_app/features/auth/domain/entities/user_entity.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/network/network_info.dart';
 
@@ -16,33 +18,53 @@ abstract class AuthRemoteDataSource {
   );
   Future<UserModel> getCurrentUser();
   Future<void> logout();
-}
+  Future<UserModel> updateProfile(UserEntity user);
 
+}
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
   final String baseUrl;
   final NetworkInfo networkInfo;
+  final AuthTokenProvider tokenProvider;
 
   AuthRemoteDataSourceImpl({
     required this.client,
     required this.baseUrl,
     required this.networkInfo,
+    required this.tokenProvider,
   });
 
   @override
   Future<UserModel> login(String email, String password) async {
     if (!await networkInfo.isConnected) throw const NetworkException();
     
-    final response = await client.post(
-      Uri.parse('$baseUrl/api/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'email': email.trim(),
-        'password': password.trim(),
-      }),
-    );
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/api/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'email': email.trim().toLowerCase(),
+          'password': password.trim(),
+        }),
+      );
 
-    return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
+      return _handleResponse(response, (data) {
+        if (data['token'] == null || data['user'] == null) {
+          throw const ServerException('Invalid server response');
+        }
+        tokenProvider.setToken(data['token']);
+        return UserModel.fromJson({
+          ...data['user'],
+          'token': data['token'],
+        });
+      });
+    } catch (e) {
+      print('[ERROR] Login failed: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -55,44 +77,114 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   ) async {
     if (!await networkInfo.isConnected) throw const NetworkException();
     
-    final response = await client.post(
-      Uri.parse('$baseUrl/api/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'name': name.trim(),
-        'email': email.trim(),
-        'password': password.trim(),
-        'address': address.trim(),
-        'phone': phone.trim(),
-      }),
-    );
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/api/register'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'name': name.trim(),
+          'email': email.trim().toLowerCase(),
+          'password': password.trim(),
+          'address': address.trim(),
+          'phone': phone.trim(),
+        }),
+      );
 
-    return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
+      return _handleResponse(response, (data) {
+        if (data['token'] == null || data['user'] == null) {
+          throw const ServerException('Invalid server response');
+        }
+        tokenProvider.setToken(data['token']);
+        return UserModel.fromJson({
+          ...data['user'],
+          'token': data['token'],
+        });
+      });
+    } catch (e) {
+      print('[ERROR] Registration failed: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<UserModel> getCurrentUser() async {
     if (!await networkInfo.isConnected) throw const NetworkException();
     
-    final response = await client.get(
-      Uri.parse('$baseUrl/api/me'),
-      headers: {'Content-Type': 'application/json'},
-    );
+    final token = tokenProvider.token;
+    if (token == null) throw const UnauthorizedException('Not authenticated');
 
-    return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
+    try {
+      final response = await client.get(
+        Uri.parse('$baseUrl/api/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
+    } catch (e) {
+      print('[ERROR] Failed to get current user: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<UserModel> updateProfile(UserEntity user) async {
+    if (!await networkInfo.isConnected) throw const NetworkException();
+    
+    final token = tokenProvider.token;
+    if (token == null) throw const UnauthorizedException('Not authenticated');
+
+    try {
+      final response = await client.put(
+        Uri.parse('$baseUrl/api/user'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': user.name,
+          'email': user.email,
+          'phone': user.phone,
+          'address': user.address,
+        }),
+      );
+
+      return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
+    } catch (e) {
+      print('[ERROR] Failed to update profile: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<void> logout() async {
     if (!await networkInfo.isConnected) throw const NetworkException();
     
-    final response = await client.post(
-      Uri.parse('$baseUrl/api/logout'),
-      headers: {'Content-Type': 'application/json'},
-    );
+    final token = tokenProvider.token;
+    if (token == null) throw const UnauthorizedException('Not authenticated');
 
-    if (response.statusCode != 200) {
-      throw const ServerException();
+    try {
+      final response = await client.post(
+        Uri.parse('$baseUrl/api/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        tokenProvider.clearToken();
+      } else {
+        throw ServerException('Logout failed with status ${response.statusCode}');
+      }
+    } catch (e) {
+      print('[ERROR] Failed to logout: $e');
+      rethrow;
     }
   }
 
@@ -105,14 +197,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     if (statusCode == 200 || statusCode == 201) {
       return onSuccess(responseBody);
-    } else if (statusCode == 400) {
-      throw BadRequestException(responseBody['message']);
-    } else if (statusCode == 401) {
-      throw UnauthorizedException(responseBody['message']);
-    } else if (statusCode == 404) {
-      throw NotFoundException(responseBody['message']);
-    } else {
-      throw ServerException(responseBody['message']);
+    }
+
+    final errorMsg = responseBody['message'] ?? 
+                   responseBody['error'] ?? 
+                   'Request failed with status $statusCode';
+
+    switch (statusCode) {
+      case 400:
+        throw BadRequestException(errorMsg);
+      case 401:
+        throw UnauthorizedException(errorMsg);
+      case 404:
+        throw NotFoundException(errorMsg);
+      default:
+        throw ServerException(errorMsg);
     }
   }
 }

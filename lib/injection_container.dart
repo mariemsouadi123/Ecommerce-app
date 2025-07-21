@@ -1,12 +1,14 @@
 import 'package:ecommerce_app/core/network/network_info.dart';
 import 'package:ecommerce_app/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:ecommerce_app/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:ecommerce_app/features/auth/domain/entities/auth_token_provider.dart';
 import 'package:ecommerce_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/SignInWithGoogleUseCase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/login_usecase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:ecommerce_app/features/auth/domain/usecases/register_usecase.dart';
+import 'package:ecommerce_app/features/auth/domain/usecases/update_profile.dart';
 import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ecommerce_app/features/cart/data/repositories/cart_repository_impl.dart';
 import 'package:ecommerce_app/features/cart/domain/repositories/cart_repository.dart';
@@ -114,6 +116,8 @@ sl.registerFactory<FavoriteBloc>(
     getCurrentUserUseCase: sl(),
     logoutUseCase: sl(),
     signInWithGoogleUseCase: sl(), 
+    updateProfileUseCase: sl(), // Add this
+
 
   ));
 
@@ -123,6 +127,7 @@ sl.registerFactory<FavoriteBloc>(
   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
   sl.registerLazySingleton(() => SignInWithGoogleUseCase(sl())); // Add this line
+  sl.registerLazySingleton(() => UpdateProfileUseCase(sl())); // Add this
 
 
   // Repository
@@ -138,6 +143,12 @@ sl.registerFactory<FavoriteBloc>(
 
   // Data sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(client: sl(), baseUrl: 'http://10.0.2.2:5000', networkInfo: sl()),
+    () => AuthRemoteDataSourceImpl(client: sl(), baseUrl: 'http://10.0.2.2:5000', networkInfo: sl(),
+       tokenProvider: sl(), // Add this
+
+    ),
+
   );
+  sl.registerSingleton<AuthTokenProvider>(AuthTokenProvider());
+
 }
