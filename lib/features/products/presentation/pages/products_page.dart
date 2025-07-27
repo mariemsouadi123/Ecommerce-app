@@ -1,8 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:ecommerce_app/features/favorites/domain/entities/favorite_product.dart';
 import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
-import 'package:ecommerce_app/features/favorites/presentation/pages/favorites_page.dart';
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
 import 'package:ecommerce_app/features/products/presentation/blocs/products/products_bloc.dart';
 import 'package:ecommerce_app/features/products/presentation/blocs/products/products_state.dart';
@@ -17,23 +15,26 @@ class ProductsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DecoratedBox(
-        decoration: BoxDecoration(
+      body: Container(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              Colors.brown.shade50,
-              Colors.brown.shade100,
-              Colors.brown.shade50,
+              Color(0xFFFEE3BC), // Light beige
+              Color(0xFFFFF9F0), // Off-white
+              Color(0xFFFEE3BC), // Light beige
             ],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Top section with logo, title and favorite button
-              _buildTopSection(context),
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: _buildSearchBar(context),
+              ),
               
               // Main content area
               Expanded(
@@ -50,126 +51,47 @@ class ProductsPage extends StatelessWidget {
     ).animate().fadeIn(duration: 500.ms);
   }
 
-  Widget _buildTopSection(BuildContext context) {
-    return Column(
-      children: [
-        // Logo, title and favorite button
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              // Logo
-              CachedNetworkImage(
-                imageUrl: 'https://maison-kayser.com/wp-content/themes/kayser/images/international_logo.png',
-                height: 40,
-                width: 40,
-                fit: BoxFit.contain,
-                placeholder: (context, url) => const SizedBox(
-                  height: 30,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => const Icon(Icons.error),
-              ),
-              const SizedBox(width: 8),
-              // Title
-              Expanded(
-                child: Text(
-                  'Our Bakery Treats',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.brown.shade800,
-                    fontFamily: 'Pacifico',
-                  ),
-                ),
-              ),
-              // Favorite button
-              _buildFavoriteButton(context),
-            ],
+  Widget _buildSearchBar(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF5E3023).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        
-        // Search bar with extra bottom padding
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: _buildSearchBar(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFavoriteButton(BuildContext context) {
-    return BlocBuilder<FavoriteBloc, FavoriteState>(
-      builder: (context, state) {
-        final favoritesCount = state is FavoritesLoaded ? state.favorites.length : 0;
-        
-        return Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: Colors.brown.shade100,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.brown.shade300,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.favorite,
-                  color: Colors.brown.shade700,
-                ),
-                onPressed: () => _navigateToFavorites(context),
-              ),
-            ).animate().fadeIn(delay: 400.ms).scale(),
-            
-            if (favoritesCount > 0)
-              Positioned(
-                right: 12,
-                top: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    favoritesCount.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ).animate().scale(),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _navigateToFavorites(BuildContext context) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const FavoritesPage(),
-        transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+        ],
       ),
-    );
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: 'Find your favorite treat...',
+          hintStyle: TextStyle(color: const Color(0xFF5E3023).withOpacity(0.5)),
+          prefixIcon: Icon(
+            Icons.search,
+            color: const Color(0xFF5E3023),
+          ),
+          suffixIcon: IconButton(
+            icon: Icon(
+              Icons.clear,
+              color: const Color(0xFF5E3023),
+            ),
+            onPressed: () => context.read<ProductsBloc>().add(SearchProducts('')),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        ),
+        onChanged: (query) => context.read<ProductsBloc>().add(SearchProducts(query)),
+      ),
+    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.5);
   }
-
 
   Widget _buildContentSection(BuildContext context, ProductsState state) {
     if (state is ProductsLoading) {
       return Center(
         child: CircularProgressIndicator(
-          color: Colors.brown.shade700,
+          color: const Color(0xFF5E3023),
         ).animate(
           onPlay: (controller) => controller.repeat(),
         ).rotate(),
@@ -183,7 +105,7 @@ class ProductsPage extends StatelessWidget {
             'No delicious treats available yet!',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.brown.shade800,
+              color: const Color(0xFF5E3023).withOpacity(0.7),
             ),
           ).animate().shake(),
         );
@@ -197,11 +119,15 @@ class ProductsPage extends StatelessWidget {
               
           return Column(
             children: [
-              // Categories with top padding
+              // Categories
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 8, bottom: 12),
                 child: _buildCategoryChips(context, state),
               ),
+              
+              // Results count
+              if (state.filteredProducts.isNotEmpty)
+                _buildResultsCount(state),
               
               // Product grid
               Expanded(
@@ -219,7 +145,7 @@ class ProductsPage extends StatelessWidget {
 
     return Center(
       child: CircularProgressIndicator(
-        color: Colors.brown.shade700,
+        color: const Color(0xFF5E3023),
       ),
     );
   }
@@ -231,35 +157,6 @@ class ProductsPage extends StatelessWidget {
     } else {
       context.read<FavoriteBloc>().add(AddToFavoritesEvent(product));
     }
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.brown.shade100,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.brown.shade200,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-      )],
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: 'Find your favorite treat...',
-          hintStyle: TextStyle(color: Colors.brown.shade500),
-          prefixIcon: Icon(Icons.search, color: Colors.brown.shade700),
-          suffixIcon: IconButton(
-            icon: Icon(Icons.clear, color: Colors.brown.shade700),
-            onPressed: () => context.read<ProductsBloc>().add(SearchProducts('')),
-          ),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        ),
-        onChanged: (query) => context.read<ProductsBloc>().add(SearchProducts(query)),
-      ),
-    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5);
   }
 
   Widget _buildCategoryChips(BuildContext context, ProductsLoaded state) {
@@ -293,7 +190,8 @@ class ProductsPage extends StatelessWidget {
         label: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.brown.shade800,
+            color: isSelected ? Colors.white : const Color(0xFF5E3023),
+            fontWeight: FontWeight.w500,
           ),
         ),
         selected: isSelected,
@@ -302,25 +200,29 @@ class ProductsPage extends StatelessWidget {
             context.read<ProductsBloc>().add(FilterProductsByCategory(label));
           }
         },
-        selectedColor: Colors.brown.shade700,
-        backgroundColor: Colors.brown.shade100,
+        selectedColor: const Color(0xFFFF6B35), // Red-orange
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: const Color(0xFF5E3023).withOpacity(0.2),
+            width: 1,
+          ),
         ),
         elevation: 2,
-        shadowColor: Colors.brown.shade300,
+        shadowColor: const Color(0xFF5E3023).withOpacity(0.1),
       ),
     );
   }
 
   Widget _buildResultsCount(ProductsLoaded state) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Text(
         'Found ${state.filteredProducts.length} delicious items',
         style: TextStyle(
           fontSize: 14,
-          color: Colors.brown.shade700,
+          color: const Color(0xFF5E3023).withOpacity(0.7),
           fontStyle: FontStyle.italic,
         ),
       ).animate().fadeIn(),

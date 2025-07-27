@@ -41,84 +41,37 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final sl = GetIt.instance;
-
 Future<void> init() async {
-sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
-  sl.registerFactory(() => CartBloc());
-  sl.registerFactory(() => CheckoutBloc(processPayment: sl(), cartBloc: sl()));
-  sl.registerLazySingleton(() => GetAllProductsUseCase(sl()));
-  sl.registerLazySingleton(() => AddProductToCartUseCase(sl()));
-  sl.registerLazySingleton(() => GetCartItemsUseCase(sl()));
-  sl.registerLazySingleton(() => RemoveProductFromCartUseCase(sl()));
-  sl.registerLazySingleton(() => ProcessPayment(sl()));
-
-
-  sl.registerLazySingleton<ProductRepository>(() => ProductRepositoryImpl(
-        remoteDataSource: sl(),
-        localDataSource: sl(),
-        networkInfo: sl(),
-      ));
-      
-  sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl());
-
-    
-    sl.registerLazySingleton<CheckoutRepository>(() => CheckoutRepositoryImpl(
-        remoteDataSource: sl(),
-      ));
-
-  sl.registerLazySingleton<ProductRemoteDataSource>(
-    () => ProductRemoteDataSourceImpl(client: sl()),
-  );
-
-  sl.registerLazySingleton<ProductLocalDataSource>(
-    () => ProductLocalDataSourceImpl(sharedPreferences: sl()),
-  );
-sl.registerLazySingleton<CheckoutRemoteDataSource>(
-    () => CheckoutRemoteDataSourceImpl(client: sl(), baseUrl: 'http://10.0.2.2:5000'),
-  );
-  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
-
-  final sharedPreferences = await SharedPreferences.getInstance();
-  sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => http.Client());
   sl.registerLazySingleton(() => InternetConnectionChecker());
+  sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl(sl()));
+  
+ final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton(() => sharedPreferences);
 
-sl.registerSingleton<FavoriteRepository>(
-  FavoriteRepositoryImpl(),
-);
+  // Register AuthTokenProvider
+ sl.registerLazySingleton<AuthTokenProvider>(() => AuthTokenProviderImpl(sl()));
+  // Auth Feature
+  // Data sources
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(
+      client: sl(), 
+      baseUrl: 'http://10.0.2.2:5000', 
+      networkInfo: sl(),
+      tokenProvider: sl(),
+    ),
+  );
 
-sl.registerSingleton<AddToFavorites>(
-  AddToFavorites(sl()),
-);
-
-sl.registerSingleton<GetFavorites>(
-  GetFavorites(sl()),
-);
-
-sl.registerSingleton<RemoveFromFavorites>(
-  RemoveFromFavorites(sl()),
-);
-
-sl.registerFactory<FavoriteBloc>(
-  () => FavoriteBloc(
-    addToFavorites: sl(),
-    getFavorites: sl(),
-    removeFromFavorites: sl(),
-  ),
-);
-
-
-// Auth Feature
-  // Bloc
-  sl.registerFactory(() => AuthBloc(
-    loginUseCase: sl(),
-    registerUseCase: sl(),
-    getCurrentUserUseCase: sl(),
-    logoutUseCase: sl(),
-    signInWithGoogleUseCase: sl(), 
-    updateProfileUseCase: sl(), // Add this
-
-
+  // Repository
+  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
+    remoteDataSource: sl(),
+    networkInfo: sl(),
+    googleSignIn: GoogleSignIn(
+      scopes: ['email', 'profile'],
+      signInOption: SignInOption.standard,
+    ),
+    sharedPreferences: sl(),
+    tokenProvider: sl(),
   ));
 
   // Use cases
@@ -126,29 +79,80 @@ sl.registerFactory<FavoriteBloc>(
   sl.registerLazySingleton(() => RegisterUseCase(sl()));
   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
   sl.registerLazySingleton(() => LogoutUseCase(sl()));
-  sl.registerLazySingleton(() => SignInWithGoogleUseCase(sl())); // Add this line
-  sl.registerLazySingleton(() => UpdateProfileUseCase(sl())); // Add this
+  sl.registerLazySingleton(() => SignInWithGoogleUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
 
-
-  // Repository
-  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(
-    remoteDataSource: sl(),
-    networkInfo: sl(),
-     googleSignIn: GoogleSignIn(
-    scopes: ['email', 'profile'],
-    signInOption: SignInOption.standard,
-  ), 
-
+  // Bloc
+  sl.registerFactory(() => AuthBloc(
+    loginUseCase: sl(),
+    registerUseCase: sl(),
+    getCurrentUserUseCase: sl(),
+    logoutUseCase: sl(),
+    signInWithGoogleUseCase: sl(),
+    updateProfileUseCase: sl(),
   ));
 
-  // Data sources
-  sl.registerLazySingleton<AuthRemoteDataSource>(
-    () => AuthRemoteDataSourceImpl(client: sl(), baseUrl: 'http://10.0.2.2:5000', networkInfo: sl(),
-       tokenProvider: sl(), // Add this
-
-    ),
-
+  // Products Feature
+  sl.registerLazySingleton<ProductRemoteDataSource>(
+    () => ProductRemoteDataSourceImpl(client: sl()),
   );
-  sl.registerSingleton<AuthTokenProvider>(AuthTokenProvider());
 
+  sl.registerLazySingleton<ProductLocalDataSource>(
+    () => ProductLocalDataSourceImpl(sharedPreferences: sl()),
+  );
+
+  sl.registerLazySingleton<ProductRepository>(() => ProductRepositoryImpl(
+    remoteDataSource: sl(),
+    localDataSource: sl(),
+    networkInfo: sl(),
+  ));
+
+  sl.registerLazySingleton(() => GetAllProductsUseCase(sl()));
+  sl.registerFactory(() => ProductsBloc(getAllProducts: sl()));
+
+  // Cart Feature
+  sl.registerLazySingleton<CartRepository>(() => CartRepositoryImpl());
+  sl.registerLazySingleton(() => AddProductToCartUseCase(sl()));
+  sl.registerLazySingleton(() => GetCartItemsUseCase(sl()));
+  sl.registerLazySingleton(() => RemoveProductFromCartUseCase(sl()));
+  sl.registerFactory(() => CartBloc());
+
+  // Favorites Feature
+  sl.registerSingleton<FavoriteRepository>(FavoriteRepositoryImpl());
+  sl.registerSingleton<AddToFavorites>(AddToFavorites(sl()));
+  sl.registerSingleton<GetFavorites>(GetFavorites(sl()));
+  sl.registerSingleton<RemoveFromFavorites>(RemoveFromFavorites(sl()));
+  sl.registerFactory(() => FavoriteBloc(
+    addToFavorites: sl(),
+    getFavorites: sl(),
+    removeFromFavorites: sl(),
+  ));
+// 1. Register remote data source with explicit types
+sl.registerLazySingleton<CheckoutRemoteDataSource>(
+  () => CheckoutRemoteDataSourceImpl(
+    client: sl<http.Client>(),
+    baseUrl: 'http://10.0.2.2:5000',
+    authRepository: sl<AuthRepository>(), remoteDataSource: sl<AuthRemoteDataSource>(),
+  ),
+);
+
+// 2. Register repository with explicit types
+sl.registerLazySingleton<CheckoutRepository>(
+  () => CheckoutRepositoryImpl(
+    remoteDataSource: sl<CheckoutRemoteDataSource>(),
+    authRepository: sl<AuthRepository>(),
+    baseUrl: 'http://10.0.2.2:5000',
+  ),
+);
+
+// 3. Register use case
+sl.registerLazySingleton<ProcessPayment>(() => ProcessPayment(sl<CheckoutRepository>()));
+
+// 4. Register bloc
+sl.registerFactory<CheckoutBloc>(() => CheckoutBloc(
+  processPayment: sl<ProcessPayment>(),
+  cartBloc: sl<CartBloc>(),
+  repository: sl<CheckoutRepository>(),
+  getCurrentUser: sl<GetCurrentUserUseCase>(),
+));
 }

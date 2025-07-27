@@ -20,6 +20,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   int quantity = 1;
   final PageController _imageController = PageController();
   int _currentImageIndex = 0;
+  
+  get userEmail => userEmail;
 
   void increaseQuantity() {
     setState(() {
@@ -381,7 +383,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                               MaterialPageRoute(
                                 builder: (_) => CheckoutPage(
                                   items: state.items,
-                                  total: total,
+                                  total: total, userEmail: userEmail,
                                 ),
                               ),
                             );

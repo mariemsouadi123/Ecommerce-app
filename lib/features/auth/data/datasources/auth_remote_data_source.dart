@@ -19,8 +19,8 @@ abstract class AuthRemoteDataSource {
   Future<UserModel> getCurrentUser();
   Future<void> logout();
   Future<UserModel> updateProfile(UserEntity user);
-
 }
+
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final http.Client client;
   final String baseUrl;
@@ -51,11 +51,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }),
       );
 
-      return _handleResponse(response, (data) {
+      return _handleResponse(response, (data) async {
         if (data['token'] == null || data['user'] == null) {
           throw const ServerException('Invalid server response');
         }
-        tokenProvider.setToken(data['token']);
+        await tokenProvider.saveToken(data['token']);
         return UserModel.fromJson({
           ...data['user'],
           'token': data['token'],
@@ -93,11 +93,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         }),
       );
 
-      return _handleResponse(response, (data) {
+      return _handleResponse(response, (data) async {
         if (data['token'] == null || data['user'] == null) {
           throw const ServerException('Invalid server response');
         }
-        tokenProvider.setToken(data['token']);
+        await tokenProvider.saveToken(data['token']);
         return UserModel.fromJson({
           ...data['user'],
           'token': data['token'],
@@ -109,34 +109,29 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-  @override
-  Future<UserModel> getCurrentUser() async {
-    if (!await networkInfo.isConnected) throw const NetworkException();
-    
-    final token = tokenProvider.token;
-    if (token == null) throw const UnauthorizedException('Not authenticated');
+@override
+Future<UserModel> getCurrentUser() async {
+  if (!await networkInfo.isConnected) throw const NetworkException();
+  
+  final token = await tokenProvider.getToken();
+  print('Token for current user request: $token');
+  if (token == null) throw const UnauthorizedException('Not authenticated');
 
-    try {
-      final response = await client.get(
-        Uri.parse('$baseUrl/api/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
+  final response = await client.get(
+    Uri.parse('$baseUrl/api/user'), // Ensure this matches your backend
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
 
-      return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
-    } catch (e) {
-      print('[ERROR] Failed to get current user: $e');
-      rethrow;
-    }
-  }
-
+  return _handleResponse(response, (data) => UserModel.fromJson(data));
+}
   @override
   Future<UserModel> updateProfile(UserEntity user) async {
     if (!await networkInfo.isConnected) throw const NetworkException();
     
-    final token = tokenProvider.token;
+    final token = await tokenProvider.getToken();
     if (token == null) throw const UnauthorizedException('Not authenticated');
 
     try {
@@ -165,7 +160,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> logout() async {
     if (!await networkInfo.isConnected) throw const NetworkException();
     
-    final token = tokenProvider.token;
+    final token = await tokenProvider.getToken();
     if (token == null) throw const UnauthorizedException('Not authenticated');
 
     try {
@@ -178,7 +173,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        tokenProvider.clearToken();
+        await tokenProvider.clearToken();
       } else {
         throw ServerException('Logout failed with status ${response.statusCode}');
       }

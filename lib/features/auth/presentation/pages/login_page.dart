@@ -25,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // KEEPING THE EXACT SAME FUNCTIONALITY
   Future<void> _handleGoogleSignIn() async {
     if (_isGoogleLoading) return;
     
@@ -44,22 +45,22 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Animated background
+          // Updated background styling only
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.brown.shade100,
-                  Colors.brown.shade50,
-                  Colors.brown.shade100,
+                  const Color(0xFFFEE3BC), // Light beige
+                  const Color(0xFFFFF9F0), // Off-white
+                  const Color(0xFFFEE3BC), // Light beige
                 ],
               ),
             ),
           ).animate().fadeIn(duration: 500.ms),
           
-          // Content
+          // Content (same functionality, updated UI)
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -70,21 +71,31 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: 40),
                     
-                    // Logo with animation
-                    Icon(Icons.bakery_dining_outlined,
-                      size: 100,
-                      color: Colors.brown.shade700,
+                    // Logo with new styling
+                    Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(
+                            'https://maison-kayser.com/wp-content/themes/kayser/images/international_logo.png',
+                          ),
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     )
                     .animate()
                     .scale(delay: 200.ms)
                     .fadeIn(),
                     
                     const SizedBox(height: 30),
-                     Text('Welcome Back',
+                    
+                    // Title with new styling only
+                    Text('Welcome Back',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.brown.shade800,
+                        color: const Color(0xFF5E3023), // Dark brown
+                        letterSpacing: 1.2,
                       ),
                       textAlign: TextAlign.center,
                     )
@@ -95,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                     Text('Sign in to continue',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.brown.shade600,
+                        color: const Color(0xFF5E3023).withOpacity(0.8),
                       ),
                       textAlign: TextAlign.center,
                     )
@@ -104,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 40),
                     
-                    // Email field with animation
+                    // Email field (same functionality)
                     _buildAnimatedTextField(
                       controller: _emailController,
                       label: 'Email',
@@ -116,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 20),
                     
-                    // Password field with animation
+                    // Password field (same functionality)
                     _buildAnimatedTextField(
                       controller: _passwordController,
                       label: 'Password',
@@ -129,51 +140,50 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Login button with animation
+                    // Login button (same functionality, updated UI)
                     BlocListener<AuthBloc, AuthState>(
-  listener: (context, state) {
-    if (state is AuthLoading && !state.isGoogleSignIn) {
-      setState(() => _isEmailLoading = true);
-    } else if (state is Authenticated) {
-      Navigator.pop(context);
-    } else if (state is AuthError) {
-      setState(() => _isEmailLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  },
-  child: ElevatedButton(
-    onPressed: _isEmailLoading ? null : () {
-      if (_formKey.currentState?.validate() ?? false) {
-        context.read<AuthBloc>().add(LoginEvent(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        ));
-      }
-    },
+                      listener: (context, state) {
+                        if (state is AuthLoading && !state.isGoogleSignIn) {
+                          setState(() => _isEmailLoading = true);
+                        } else if (state is Authenticated) {
+                          Navigator.pop(context);
+                        } else if (state is AuthError) {
+                          setState(() => _isEmailLoading = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(state.message),
+                              backgroundColor: const Color(0xFFC8553D),
+                            ),
+                          );
+                        }
+                      },
+                      child: ElevatedButton(
+                        onPressed: _isEmailLoading ? null : () {
+                          if (_formKey.currentState?.validate() ?? false) {
+                            context.read<AuthBloc>().add(LoginEvent(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
+                            ));
+                          }
+                        },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.brown.shade700,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: const Color(0xFFFF6B35), // Red-orange
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                          elevation: 3,
-                          shadowColor: Colors.brown.shade300,
+                          elevation: 5,
                         ),
                         child: _isEmailLoading
                             ? const CircularProgressIndicator(
                                 color: Colors.white,
-                                strokeWidth: 2,
+                                strokeWidth: 3,
                               )
                             : Text('LOGIN',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.brown.shade50,
+                                  color: Colors.white,
                                 ),
                               ),
                       )
@@ -184,17 +194,27 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Divider with animation
+                    // Divider with updated styling only
                     Row(
                       children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text('OR',
-                            style: TextStyle(color: Colors.brown.shade600),
+                        Expanded(
+                          child: Divider(
+                            color: const Color(0xFF5E3023).withOpacity(0.3),
                           ),
                         ),
-                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('OR',
+                            style: TextStyle(
+                              color: const Color(0xFF5E3023).withOpacity(0.6),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: const Color(0xFF5E3023).withOpacity(0.3),
+                          ),
+                        ),
                       ],
                     )
                     .animate()
@@ -202,27 +222,27 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 20),
                     
-                    // Google sign-in with animation
-                   BlocListener<AuthBloc, AuthState>(
-  listener: (context, state) {
-    if (state is AuthLoading) {
-      setState(() {
-        _isEmailLoading = state.isGoogleSignIn ? false : true;
-        _isGoogleLoading = state.isGoogleSignIn;
-      });
-    }
-    if (state is Authenticated) {
-      Navigator.pop(context);
-    }
-    if (state is AuthError) {
-      setState(() {
-        _isEmailLoading = false;
-        _isGoogleLoading = state.isGoogleSignIn;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(state.message)),
-      );
-    }
+                    // Google sign-in (SAME FUNCTIONALITY, updated UI)
+                    BlocListener<AuthBloc, AuthState>(
+                      listener: (context, state) {
+                        if (state is AuthLoading) {
+                          setState(() {
+                            _isEmailLoading = state.isGoogleSignIn ? false : true;
+                            _isGoogleLoading = state.isGoogleSignIn;
+                          });
+                        }
+                        if (state is Authenticated) {
+                          Navigator.pop(context);
+                        }
+                        if (state is AuthError) {
+                          setState(() {
+                            _isEmailLoading = false;
+                            _isGoogleLoading = state.isGoogleSignIn;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(state.message)),
+                          );
+                        }
                       },
                       child: OutlinedButton.icon(
                         icon: _isGoogleLoading
@@ -231,7 +251,7 @@ class _LoginPageState extends State<LoginPage> {
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.brown,
+                                  color: Color(0xFF5E3023),
                                 ),
                               )
                             : Image.network(
@@ -241,16 +261,20 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                         label: Text(
                           _isGoogleLoading ? 'Signing in...' : 'Continue with Google',
-                          style: TextStyle(color: Colors.brown.shade800),
+                          style: TextStyle(
+                            color: const Color(0xFF5E3023),
+                          ),
                         ),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                          side: BorderSide(color: Colors.brown.shade400),
+                          side: BorderSide(
+                            color: const Color(0xFF5E3023).withOpacity(0.5),
+                          ),
                         ),
-                        onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+                        onPressed: _isGoogleLoading ? null : _handleGoogleSignIn, // SAME FUNCTION
                       )
                       .animate()
                       .fadeIn(delay: 900.ms)
@@ -259,7 +283,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Register link with animation
+                    // Register link (same functionality, updated UI)
                     Center(
                       child: TextButton(
                         onPressed: _isEmailLoading || _isGoogleLoading
@@ -277,13 +301,15 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text.rich(
                           TextSpan(
                             text: "Don't have an account? ",
-                            style: TextStyle(color: Colors.brown.shade600),
+                            style: TextStyle(
+                              color: const Color(0xFF5E3023).withOpacity(0.7),
+                            ),
                             children: [
                               TextSpan(
                                 text: 'Register',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.brown.shade800,
+                                  color: const Color(0xFFFF6B35),
                                 ),
                               ),
                             ],
@@ -315,22 +341,25 @@ class _LoginPageState extends State<LoginPage> {
       controller: controller,
       obscureText: obscureText,
       validator: validator,
+      style: TextStyle(color: const Color(0xFF5E3023)),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.brown.shade600),
+        prefixIcon: Icon(icon, color: const Color(0xFF5E3023).withOpacity(0.7)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.brown.shade400),
+          borderSide: BorderSide(color: const Color(0xFF5E3023).withOpacity(0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.brown.shade400),
+          borderSide: BorderSide(color: const Color(0xFF5E3023).withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.brown.shade700, width: 2),
+          borderSide: const BorderSide(color: Color(0xFFFF6B35), width: 2),
         ),
-        labelStyle: TextStyle(color: Colors.brown.shade600),
+        labelStyle: TextStyle(
+          color: const Color(0xFF5E3023).withOpacity(0.7),
+        ),
       ),
     )
     .animate()

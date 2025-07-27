@@ -12,7 +12,10 @@ abstract class AuthRepository {
     String phone,
   );
   Future<Either<Failure, UserEntity>> getCurrentUser();
+  Future<String> getToken(); 
   Future<Either<Failure, Unit>> logout();
   Future<Either<Failure, UserEntity>> signInWithGoogle();
-  Future<Either<Failure, UserEntity>> updateProfile(UserEntity user); // Add this
+  Future<Either<Failure, UserEntity>> updateProfile(UserEntity user); 
+
+
 }

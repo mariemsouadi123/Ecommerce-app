@@ -1,13 +1,35 @@
-class AuthTokenProvider {
-  String? _token;
+// auth_token_provider.dart
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ecommerce_app/injection_container.dart';
 
-  String? get token => _token;
+abstract class AuthTokenProvider {
+  Future<String?> getToken();
+  Future<void> saveToken(String token);
+  Future<void> clearToken();
+}
 
-  void setToken(String token) {
-    _token = token;
+class AuthTokenProviderImpl implements AuthTokenProvider {
+  final SharedPreferences _sharedPreferences;
+  static const _tokenKey = 'auth_token';
+
+  AuthTokenProviderImpl(this._sharedPreferences);
+
+  @override
+  Future<String?> getToken() async {
+    final token = _sharedPreferences.getString(_tokenKey);
+    print('Retrieved token: $token'); // Debug log
+    return token;
   }
 
-  void clearToken() {
-    _token = null;
+  @override
+  Future<void> saveToken(String token) async {
+    print('Saving token: $token'); // Debug log
+    await _sharedPreferences.setString(_tokenKey, token);
+  }
+
+  @override
+  Future<void> clearToken() async {
+    print('Clearing token'); // Debug log
+    await _sharedPreferences.remove(_tokenKey);
   }
 }

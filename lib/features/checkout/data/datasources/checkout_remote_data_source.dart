@@ -8,5 +8,25 @@ abstract class CheckoutRemoteDataSource {
   Future<Either<Failure, Map<String, dynamic>>> processOrder({
     required List<CartItem> items,
     required double total,
+    required String paymentMethod,
+    String? cardToken,
+    String? verificationCode,
+  });
+  
+  Future<Either<Failure, String>> initiatePayment({
+    required double amount,
+    required String paymentMethod,
+    String? cardNumber,
+    String? expiryDate,
+    String? cvc,
+  });
+  
+  Future<Either<Failure, bool>> verifyPayment({
+    required String paymentId,
+    required String verificationCode,
+  });
+   Future<bool> resendVerificationCode({
+    required String paymentId,
+    required String userEmail,
   });
 }

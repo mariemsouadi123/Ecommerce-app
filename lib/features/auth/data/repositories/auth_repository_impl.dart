@@ -5,46 +5,50 @@ import 'package:ecommerce_app/core/errors/exception.dart';
 import 'package:ecommerce_app/core/errors/failures.dart';
 import 'package:ecommerce_app/core/network/network_info.dart';
 import 'package:ecommerce_app/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:ecommerce_app/features/auth/domain/entities/auth_token_provider.dart';
 import 'package:ecommerce_app/features/auth/domain/entities/user_entity.dart';
 import 'package:ecommerce_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as secureStorage;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;
   final GoogleSignIn _googleSignIn;
+  final SharedPreferences _sharedPreferences;
+  final AuthTokenProvider tokenProvider;
+
+  static const _tokenKey = 'auth_token';
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.networkInfo,
     required GoogleSignIn googleSignIn,
-  }) : _googleSignIn = googleSignIn;
+    required SharedPreferences sharedPreferences,
+    required this.tokenProvider,
+  })  : _googleSignIn = googleSignIn,
+        _sharedPreferences = sharedPreferences;
 
- @override
+@override
 Future<Either<Failure, UserEntity>> login(String email, String password) async {
   try {
-    print('[DEBUG] Starting login process for email: $email');
+    if (!await networkInfo.isConnected) return Left(OfflineFailure());
+    
     final userModel = await remoteDataSource.login(email, password);
-    print('[DEBUG] Login successful for user: ${userModel.email}');
+    print('Token received: ${userModel.token}'); // Debug log
+    await _saveToken(userModel.token!); // Add null check
+    print('Token saved successfully'); // Debug log
     return Right(userModel.toEntity());
   } on UnauthorizedException {
-    print('[WARNING] Invalid credentials for email: $email');
     return Left(InvalidCredentialsFailure());
-  } on BadRequestException catch (e) {
-    print('[ERROR] Bad request: ${e.message}');
-    return Left(ServerFailure(message: e.message));
-  } on ServerException catch (e) {
-    print('[ERROR] Server error: ${e.message}');
-    return Left(ServerFailure(message: e.message));
-  } on NetworkException {
-    print('[ERROR] Network error');
-    return Left(OfflineFailure());
   } catch (e) {
-    print('[ERROR] Unexpected login error: $e');
-    return Left(ServerFailure(message: 'Login failed: ${e.toString()}'));
+    print('Login error: $e');
+    return Left(ServerFailure(message: 'Login failed'));
   }
 }
+
   @override
   Future<Either<Failure, UserEntity>> register(
     String name,
@@ -53,7 +57,11 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
     String address,
     String phone,
   ) async {
-    return await _handleAuthRequest(() async {
+    try {
+      if (!await networkInfo.isConnected) {
+        return Left(OfflineFailure());
+      }
+
       final userModel = await remoteDataSource.register(
         name,
         email,
@@ -61,62 +69,102 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
         address,
         phone,
       );
-      return userModel.toEntity();
-    });
+      await _saveToken(userModel.token); // Save the token after registration
+      return Right(userModel.toEntity());
+    } on UserAlreadyExistsException {
+      return Left(EmailAlreadyInUseFailure());
+    } on BadRequestException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException {
+      return Left(OfflineFailure());
+    } catch (e) {
+      return Left(ServerFailure(message: 'Registration failed: ${e.toString()}'));
+    }
   }
 
   @override
   Future<Either<Failure, UserEntity>> getCurrentUser() async {
-    return await _handleAuthRequest(() async {
+    try {
+      if (!await networkInfo.isConnected) {
+        return Left(OfflineFailure());
+      }
+
+      final token = await getToken();
+      if (token == null) {
+        return Left(UnauthorizedFailure());
+      }
+
       final userModel = await remoteDataSource.getCurrentUser();
-      return userModel.toEntity();
-    });
+      return Right(userModel.toEntity());
+    } on UnauthorizedException {
+      return Left(UnauthorizedFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException {
+      return Left(OfflineFailure());
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to get current user: ${e.toString()}'));
+    }
   }
 
   @override
   Future<Either<Failure, Unit>> logout() async {
-    return await _handleAuthRequest(() async {
+    try {
+      if (!await networkInfo.isConnected) {
+        return Left(OfflineFailure());
+      }
+
       await remoteDataSource.logout();
-      return unit;
-    });
+      await _clearToken(); // Clear the token on logout
+      await _googleSignIn.signOut(); // Sign out from Google if signed in
+      return const Right(unit);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException {
+      return Left(OfflineFailure());
+    } catch (e) {
+      return Left(ServerFailure(message: 'Logout failed: ${e.toString()}'));
+    }
   }
 
   @override
   Future<Either<Failure, UserEntity>> signInWithGoogle() async {
-    if (!await networkInfo.isConnected) {
-      return Left(OfflineFailure());
-    }
-
     try {
-      // Trigger the authentication flow
+      if (!await networkInfo.isConnected) {
+        return Left(OfflineFailure());
+      }
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
       if (googleUser == null) {
         return Left(CanceledByUserFailure());
       }
 
-      // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // Create a new credential
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the Google credential
       final UserCredential userCredential = 
           await FirebaseAuth.instance.signInWithCredential(credential);
 
-      // Convert Firebase User to your UserEntity
-      final user = userCredential.user;
-      if (user != null) {
-        return Right(UserEntity(
+      if (userCredential.user != null) {
+        // Convert Firebase User to your UserEntity
+        final user = userCredential.user!;
+        final userEntity = UserEntity(
           id: user.uid,
           name: user.displayName ?? '',
           email: user.email ?? '',
           // Add other fields as needed
-        ));
+        );
+
+        // Get the Firebase ID token to use for your backend
+        final token = await user.getIdToken();
+        await _saveToken(token); // Save the Firebase token
+
+        return Right(userEntity);
       } else {
         return Left(ServerFailure(message: 'No user returned from Google Sign-In'));
       }
@@ -126,39 +174,50 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
       return Left(ServerFailure(message: 'Unexpected error during Google Sign-In: ${e.toString()}'));
     }
   }
+
   @override
   Future<Either<Failure, UserEntity>> updateProfile(UserEntity user) async {
-    return await _handleAuthRequest(() async {
+    try {
+      if (!await networkInfo.isConnected) {
+        return Left(OfflineFailure());
+      }
+
+      final token = await getToken();
+      if (token == null) {
+        return Left(UnauthorizedFailure());
+      }
+
       final userModel = await remoteDataSource.updateProfile(user);
-      return userModel.toEntity();
-    });
-  }
-  Future<Either<Failure, T>> _handleAuthRequest<T>(Future<T> Function() request) async {
-  try {
-    if (!await networkInfo.isConnected) {
+      return Right(userModel.toEntity());
+    } on UnauthorizedException {
+      return Left(UnauthorizedFailure());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on NetworkException {
       return Left(OfflineFailure());
+    } catch (e) {
+      return Left(ServerFailure(message: 'Failed to update profile: ${e.toString()}'));
     }
-    
-    final response = await request();
-    return Right(response);
-  } on UserAlreadyExistsException {
-    return Left(EmailAlreadyInUseFailure());
-  } on InvalidCredentialsException {
-    return Left(InvalidCredentialsFailure());
-  } on UnauthorizedException {
-    return Left(UnauthorizedFailure());
-  } on NetworkException {
-    return Left(OfflineFailure());
-  } on ServerException catch (e) {
-    return Left(ServerFailure(message: e.message));
-  } on NotFoundException {
-    return Left(NotFoundFailure());
-  } on TokenExpiredException {
-    return Left(UnauthorizedFailure());
-  } on SessionExpiredException {
-    return Left(UnauthorizedFailure());
-  } catch (e) {
-    return Left(ServerFailure(message: 'Unexpected error: ${e.toString()}'));
   }
-}
+
+  Future<String> getToken() async {
+    final token = _sharedPreferences.getString(_tokenKey);
+    if (token == null) {
+      throw Exception('No authentication token found');
+    }
+    return token;
+  }
+
+  Future<void> _saveToken(String? token) async {
+    if (token != null) {
+      await _sharedPreferences.setString(_tokenKey, token);
+      tokenProvider.saveToken(token); // Also update the token provider
+    }
+  }
+
+  Future<void> _clearToken() async {
+    await _sharedPreferences.remove(_tokenKey);
+    tokenProvider.clearToken(); // Also clear the token provider
+  }
+
 }

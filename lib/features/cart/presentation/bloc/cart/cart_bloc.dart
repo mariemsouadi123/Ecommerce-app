@@ -98,12 +98,13 @@ class CartBloc extends Bloc<CartEvent, CartState> {
     }
     return 'Unexpected error';
   }
-  Future<void> _onClearCart(
-    ClearCartEvent event,
-    Emitter<CartState> emit,
-  ) async {
-    emit(CartLoading());
-    _cartItems.clear();
-    emit(CartLoaded(items: List.from(_cartItems)));
-  }
+  // In your CartBloc class
+Future<void> _onClearCart(
+  ClearCartEvent event,
+  Emitter<CartState> emit,
+) async {
+  emit(CartLoading());
+  _cartItems.clear();
+  emit(CartLoaded(items: List.from(_cartItems))); // Emit empty cart
+}
 }
