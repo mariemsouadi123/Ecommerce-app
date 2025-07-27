@@ -25,7 +25,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // KEEPING THE EXACT SAME FUNCTIONALITY
   Future<void> _handleGoogleSignIn() async {
     if (_isGoogleLoading) return;
     
@@ -45,7 +44,7 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Updated background styling only
+          // Gradient background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -60,7 +59,34 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ).animate().fadeIn(duration: 500.ms),
           
-          // Content (same functionality, updated UI)
+          // Decorative circles from Register page
+          Positioned(
+            top: -50,
+            left: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD88C9A).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+            ).animate().scale(delay: 200.ms, duration: 1000.ms),
+          ),
+          
+          Positioned(
+            bottom: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B35).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+            ).animate().scale(delay: 300.ms, duration: 1000.ms),
+          ),
+          
+          // Content
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -71,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     const SizedBox(height: 40),
                     
-                    // Logo with new styling
+                    // Logo
                     Container(
                       height: 120,
                       decoration: BoxDecoration(
@@ -89,12 +115,12 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Title with new styling only
+                    // Title
                     Text('Welcome Back',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF5E3023), // Dark brown
+                        color: const Color(0xFF5E3023),
                         letterSpacing: 1.2,
                       ),
                       textAlign: TextAlign.center,
@@ -115,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 40),
                     
-                    // Email field (same functionality)
+                    // Email field
                     _buildAnimatedTextField(
                       controller: _emailController,
                       label: 'Email',
@@ -127,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 20),
                     
-                    // Password field (same functionality)
+                    // Password field
                     _buildAnimatedTextField(
                       controller: _passwordController,
                       label: 'Password',
@@ -140,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Login button (same functionality, updated UI)
+                    // Login button
                     BlocListener<AuthBloc, AuthState>(
                       listener: (context, state) {
                         if (state is AuthLoading && !state.isGoogleSignIn) {
@@ -167,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B35), // Red-orange
+                          backgroundColor: const Color(0xFFFF6B35),
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
@@ -194,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Divider with updated styling only
+                    // Divider
                     Row(
                       children: [
                         Expanded(
@@ -222,7 +248,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 20),
                     
-                    // Google sign-in (SAME FUNCTIONALITY, updated UI)
+                    // Google sign-in
                     BlocListener<AuthBloc, AuthState>(
                       listener: (context, state) {
                         if (state is AuthLoading) {
@@ -274,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                             color: const Color(0xFF5E3023).withOpacity(0.5),
                           ),
                         ),
-                        onPressed: _isGoogleLoading ? null : _handleGoogleSignIn, // SAME FUNCTION
+                        onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
                       )
                       .animate()
                       .fadeIn(delay: 900.ms)
@@ -283,7 +309,7 @@ class _LoginPageState extends State<LoginPage> {
                     
                     const SizedBox(height: 30),
                     
-                    // Register link (same functionality, updated UI)
+                    // Register link
                     Center(
                       child: TextButton(
                         onPressed: _isEmailLoading || _isGoogleLoading

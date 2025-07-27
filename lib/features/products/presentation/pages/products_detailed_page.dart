@@ -1,11 +1,12 @@
 import 'package:ecommerce_app/features/cart/domain/entities/cart_item.dart';
 import 'package:ecommerce_app/features/cart/presentation/bloc/cart/cart_bloc.dart';
-import 'package:ecommerce_app/features/checkout/presentation/pages/checkout_page.dart';
+import 'package:ecommerce_app/features/cart/presentation/pages/cart_page.dart';
 import 'package:ecommerce_app/features/favorites/presentation/bloc/favorite/favorite_bloc.dart';
 import 'package:ecommerce_app/features/products/domain/entities/product.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   final Product product;
@@ -20,8 +21,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   int quantity = 1;
   final PageController _imageController = PageController();
   int _currentImageIndex = 0;
-  
-  get userEmail => userEmail;
 
   void increaseQuantity() {
     setState(() {
@@ -127,6 +126,39 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       ),
       body: Stack(
         children: [
+          // Background with decorative circles
+          Container(
+            color: const Color(0xFFFEE3BC),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: -50,
+                  left: -50,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD88C9A).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ).animate().scale(delay: 200.ms, duration: 1000.ms),
+                ),
+                Positioned(
+                  bottom: -100,
+                  right: -100,
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B35).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ).animate().scale(delay: 300.ms, duration: 1000.ms),
+                ),
+              ],
+            ),
+          ),
+          
           // Main Content
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -179,31 +211,25 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                           }),
                         ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          height: 24,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                theme.scaffoldBackgroundColor,
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
                 
                 // Product Details
-                Padding(
+                Container(
+                  margin: const EdgeInsets.only(top: 20),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -214,17 +240,19 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                           Expanded(
                             child: Text(
                               widget.product.name,
-                              style: theme.textTheme.headlineSmall?.copyWith(
+                              style: const TextStyle(
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                height: 1.2,
+                                color: Color(0xFF5E3023),
                               ),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Text(
                             '\$${widget.product.price.toStringAsFixed(2)}',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              color: theme.primaryColor,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              color: Color(0xFFFF6B35),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -246,10 +274,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             unratedColor: Colors.amber.withAlpha(50),
                           ),
                           const SizedBox(width: 8),
-                          Text(
+                          const Text(
                             '4.5',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
+                            style: TextStyle(
+                              color: Color(0xFF5E3023),
                             ),
                           ),
                           const Spacer(),
@@ -281,8 +309,8 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       const SizedBox(height: 12),
                       Text(
                         widget.product.description ?? 'No description available',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        style: const TextStyle(
+                          color: Color(0xFF5E3023),
                           height: 1.6,
                         ),
                       ),
@@ -294,16 +322,17 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       Container(
                         width: 140,
                         decoration: BoxDecoration(
-                          color: isDarkMode 
-                            ? Colors.grey[800] 
-                            : Colors.grey[100],
+                          color: const Color(0xFFFEE3BC),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFF5E3023).withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove),
+                              icon: const Icon(Icons.remove, color: Color(0xFF5E3023)),
                               onPressed: decreaseQuantity,
                               splashRadius: 20,
                             ),
@@ -312,10 +341,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Color(0xFF5E3023),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.add),
+                              icon: const Icon(Icons.add, color: Color(0xFF5E3023)),
                               onPressed: increaseQuantity,
                               splashRadius: 20,
                             ),
@@ -338,7 +368,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -346,11 +376,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                     offset: const Offset(0, -4),
                   ),
                 ],
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: BlocConsumer<CartBloc, CartState>(
                 listener: (context, state) {
                   if (state is CartLoaded && state.items.isNotEmpty) {
-                    // Show success message when items are added
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Added $quantity ${widget.product.name} to cart'),
@@ -373,43 +403,32 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                       // Cart Icon with Badge
                       InkWell(
                         onTap: () {
-                          if (state is CartLoaded && state.items.isNotEmpty) {
-                            final total = state.items.fold(
-                              0.0, 
-                              (sum, item) => sum + (item.product.price * item.quantity)
-                            );
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CheckoutPage(
-                                  items: state.items,
-                                  total: total, userEmail: userEmail,
-                                ),
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Your cart is empty'),
-                                behavior: SnackBarBehavior.floating,
-                                duration: Duration(seconds: 1),
-                              ),
-                            );
-                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CartPage(),
+                            ),
+                          );
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: isDarkMode 
-                              ? Colors.grey[800] 
-                              : Colors.grey[100],
+                            color: const Color(0xFFFEE3BC),
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF5E3023).withOpacity(0.3),
+                            ),
                           ),
                           child: Badge(
                             isLabelVisible: itemCount > 0,
                             label: Text(itemCount.toString()),
-                            child: const Icon(Icons.shopping_cart_outlined),
+                            backgroundColor: const Color(0xFFC8553D),
+                            textColor: Colors.white,
+                            child: const Icon(
+                              Icons.shopping_cart_outlined,
+                              color: Color(0xFF5E3023),
+                            ),
                           ),
                         ),
                       ),
@@ -421,7 +440,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                           height: 48,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.primaryColor,
+                              backgroundColor: const Color(0xFF5E3023),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -430,7 +449,6 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                             ),
                             onPressed: widget.product.stock > 0
                                 ? () {
-                                    // Add items to cart
                                     for (int i = 0; i < quantity; i++) {
                                       context.read<CartBloc>().add(
                                         AddProductToCartEvent(widget.product),
@@ -471,8 +489,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+      style: const TextStyle(
+        fontSize: 18,
         fontWeight: FontWeight.bold,
+        color: Color(0xFF5E3023),
       ),
     );
   }

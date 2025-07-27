@@ -32,13 +32,6 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xFF5E3023),
-        iconTheme: const IconThemeData(color: Color(0xFF5E3023)),
-      ),
       body: Stack(
         children: [
           // Animated gradient background

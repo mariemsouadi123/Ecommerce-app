@@ -16,231 +16,255 @@ class CartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Cart'),
         backgroundColor: const Color(0xFFFEE3BC),
         elevation: 0,
         foregroundColor: const Color(0xFF5E3023),
-        actions: [
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B35).withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.refresh),
-            ),
-            onPressed: () {
-              context.read<CartBloc>().add(LoadCartEvent());
-            },
-          ).animate().fadeIn(delay: 200.ms),
-        ],
       ),
-      backgroundColor: const Color(0xFFFEE3BC),
-      body: BlocConsumer<CartBloc, CartState>(
-        listener: (context, state) {
-          if (state is CartError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: const Color(0xFFC8553D),
-              ),
-            );
-          }
-          if (state is CheckoutSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Payment successful!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          if (state is CartLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF5E3023),
-              ),
-            );
-          }
-
-          if (state is CartLoaded) {
-            if (state.items.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.shopping_cart_outlined,
-                      size: 60,
-                      color: const Color(0xFF5E3023).withOpacity(0.3),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Your cart is empty',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: const Color(0xFF5E3023).withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final total = state.items.fold<double>(
-              0,
-              (sum, item) => sum + (item.product.price * item.quantity),
-            );
-
-            return Column(
+      body: Stack(
+        children: [
+          // Background with decorative circles
+          Container(
+            color: const Color(0xFFFEE3BC),
+            child: Stack(
               children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.items.length,
-                    itemBuilder: (context, index) {
-                      final item = state.items[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Slidable(
-                          key: ValueKey(item.product.id),
-                          endActionPane: ActionPane(
-                            motion: const ScrollMotion(),
-                            children: [
-                              SlidableAction(
-                                onPressed: (context) {
-                                  _removeItem(context, item.product);
-                                },
-                                backgroundColor: const Color(0xFFC8553D),
-                                foregroundColor: Colors.white,
-                                icon: Icons.delete,
-                                label: 'Remove',
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ],
+                Positioned(
+                  top: -50,
+                  left: -50,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD88C9A).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ).animate().scale(delay: 200.ms, duration: 1000.ms),
+                ),
+                Positioned(
+                  bottom: -100,
+                  right: -100,
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF6B35).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                  ).animate().scale(delay: 300.ms, duration: 1000.ms),
+                ),
+              ],
+            ),
+          ),
+          
+          // Content
+          BlocConsumer<CartBloc, CartState>(
+            listener: (context, state) {
+              if (state is CartError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: const Color(0xFFC8553D),
+                  ),
+                );
+              }
+              if (state is CheckoutSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Payment successful!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              if (state is CartLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF5E3023),
+                  ),
+                );
+              }
+
+              if (state is CartLoaded) {
+                if (state.items.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 60,
+                          color: const Color(0xFF5E3023).withOpacity(0.3),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Your cart is empty',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: const Color(0xFF5E3023).withOpacity(0.6),
                           ),
-                          child: Card(
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    item.product.imageUrl,
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 60,
-                                      height: 60,
-                                      color: Colors.grey[200],
-                                      child: const Icon(Icons.error),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final total = state.items.fold<double>(
+                  0,
+                  (sum, item) => sum + (item.product.price * item.quantity),
+                );
+
+                return Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: state.items.length,
+                        itemBuilder: (context, index) {
+                          final item = state.items[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Slidable(
+                              key: ValueKey(item.product.id),
+                              endActionPane: ActionPane(
+                                motion: const ScrollMotion(),
+                                children: [
+                                  SlidableAction(
+                                    onPressed: (context) {
+                                      _removeItem(context, item.product);
+                                    },
+                                    backgroundColor: const Color(0xFFC8553D),
+                                    foregroundColor: Colors.white,
+                                    icon: Icons.delete,
+                                    label: 'Remove',
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ],
+                              ),
+                              child: Card(
+                                elevation: 2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                                    leading: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        item.product.imageUrl,
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(
+                                          width: 60,
+                                          height: 60,
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.error),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      item.product.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF5E3023),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Qty: ${item.quantity}',
+                                      style: TextStyle(
+                                        color: const Color(0xFF5E3023).withOpacity(0.6),
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      '\$${(item.product.price * item.quantity).toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF5E3023),
+                                      ),
                                     ),
                                   ),
                                 ),
-                                title: Text(
-                                  item.product.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF5E3023),
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Qty: ${item.quantity}',
-                                  style: TextStyle(
-                                    color: const Color(0xFF5E3023).withOpacity(0.6),
-                                  ),
-                                ),
-                                trailing: Text(
-                                  '\$${(item.product.price * item.quantity).toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF5E3023),
-                                  ),
+                              ),
+                            ).animate().fadeIn(delay: (100 * index).ms),
+                          );
+                        },
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 10,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Total:',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF5E3023),
                                 ),
                               ),
-                            ),
+                              Text(
+                                '\$${total.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF5E3023),
+                                ),
+                              ),
+                            ],
                           ),
-                        ).animate().fadeIn(delay: (100 * index).ms),
-                      );
-                    },
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 10,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total:',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5E3023),
-                            ),
-                          ),
-                          Text(
-                            '\$${total.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF5E3023),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                backgroundColor: const Color(0xFF5E3023),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () =>
+                                  _handlePayment(context, state.items, total),
+                              child: const Text(
+                                'Proceed to Payment',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: const Color(0xFF5E3023),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => _handlePayment(context, state.items, total),
-                          child: const Text(
-                            'Proceed to Payment',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }
+                    ),
+                  ],
+                );
+              }
 
-          return const Center(child: Text('Your cart is empty'));
-        },
+              return const Center(child: Text('Your cart is empty'));
+            },
+          ),
+        ],
       ),
     );
   }
@@ -249,7 +273,8 @@ class CartPage extends StatelessWidget {
     context.read<CartBloc>().add(RemoveProductFromCartEvent(product));
   }
 
-  void _handlePayment(BuildContext context, List<CartItem> items, double total) {
+  void _handlePayment(
+      BuildContext context, List<CartItem> items, double total) {
     final authState = context.read<AuthBloc>().state;
     final userEmail = authState is Authenticated ? authState.user.email : '';
 
