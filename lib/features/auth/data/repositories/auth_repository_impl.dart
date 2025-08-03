@@ -37,9 +37,9 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
     if (!await networkInfo.isConnected) return Left(OfflineFailure());
     
     final userModel = await remoteDataSource.login(email, password);
-    print('Token received: ${userModel.token}'); // Debug log
-    await _saveToken(userModel.token!); // Add null check
-    print('Token saved successfully'); // Debug log
+    print('Token received: ${userModel.token}'); 
+    await _saveToken(userModel.token!);
+    print('Token saved successfully');
     return Right(userModel.toEntity());
   } on UnauthorizedException {
     return Left(InvalidCredentialsFailure());
@@ -69,7 +69,7 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
         address,
         phone,
       );
-      await _saveToken(userModel.token); // Save the token after registration
+      await _saveToken(userModel.token);
       return Right(userModel.toEntity());
     } on UserAlreadyExistsException {
       return Left(EmailAlreadyInUseFailure());
@@ -117,8 +117,8 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
       }
 
       await remoteDataSource.logout();
-      await _clearToken(); // Clear the token on logout
-      await _googleSignIn.signOut(); // Sign out from Google if signed in
+      await _clearToken();
+      await _googleSignIn.signOut(); 
       return const Right(unit);
     } on ServerException catch (e) {
       return Left(ServerFailure(message: e.message));
@@ -130,50 +130,48 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
   }
 
   @override
-  Future<Either<Failure, UserEntity>> signInWithGoogle() async {
-    try {
-      if (!await networkInfo.isConnected) {
-        return Left(OfflineFailure());
-      }
+Future<Either<Failure, UserEntity>> signInWithGoogle() async {
+  try {
+    if (!await networkInfo.isConnected) {
+      return Left(OfflineFailure());
+    }
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        return Left(CanceledByUserFailure());
-      }
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    if (googleUser == null) {
+      return Left(CanceledByUserFailure());
+    }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final OAuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final OAuthCredential credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final UserCredential userCredential = 
+        await FirebaseAuth.instance.signInWithCredential(credential);
+
+    if (userCredential.user != null) {
+      final user = userCredential.user!;
+      final userEntity = UserEntity(
+        id: user.uid,
+        name: user.displayName ?? 'Google User',
+        email: user.email ?? '',
+        imageUrl: user.photoURL, // Add this line
       );
 
-      final UserCredential userCredential = 
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      final token = await user.getIdToken();
+      await _saveToken(token); 
 
-      if (userCredential.user != null) {
-        // Convert Firebase User to your UserEntity
-        final user = userCredential.user!;
-        final userEntity = UserEntity(
-          id: user.uid,
-          name: user.displayName ?? '',
-          email: user.email ?? '',
-          // Add other fields as needed
-        );
-
-        // Get the Firebase ID token to use for your backend
-        final token = await user.getIdToken();
-        await _saveToken(token); // Save the Firebase token
-
-        return Right(userEntity);
-      } else {
-        return Left(ServerFailure(message: 'No user returned from Google Sign-In'));
-      }
-    } on FirebaseAuthException catch (e) {
-      return Left(ServerFailure(message: e.message ?? 'Google Sign-In failed'));
-    } catch (e) {
-      return Left(ServerFailure(message: 'Unexpected error during Google Sign-In: ${e.toString()}'));
+      return Right(userEntity);
+    } else {
+      return Left(ServerFailure(message: 'No user returned from Google Sign-In'));
     }
+  } on FirebaseAuthException catch (e) {
+    return Left(ServerFailure(message: e.message ?? 'Google Sign-In failed'));
+  } catch (e) {
+    return Left(ServerFailure(message: 'Unexpected error during Google Sign-In: ${e.toString()}'));
   }
+}
 
   @override
   Future<Either<Failure, UserEntity>> updateProfile(UserEntity user) async {
@@ -211,13 +209,13 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
   Future<void> _saveToken(String? token) async {
     if (token != null) {
       await _sharedPreferences.setString(_tokenKey, token);
-      tokenProvider.saveToken(token); // Also update the token provider
+      tokenProvider.saveToken(token);
     }
   }
 
   Future<void> _clearToken() async {
     await _sharedPreferences.remove(_tokenKey);
-    tokenProvider.clearToken(); // Also clear the token provider
+    tokenProvider.clearToken();
   }
 
 }

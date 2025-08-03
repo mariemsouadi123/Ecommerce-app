@@ -85,8 +85,6 @@ Future<void> _onUpdateProfile(
     final result = await getCurrentUserUseCase();
     emit(_mapFailureOrUserToState(result));
   }
-
-  // Update your _onSignInWithGoogle method:
 Future<void> _onSignInWithGoogle(SignInWithGoogleEvent event, Emitter<AuthState> emit) async {
   emit(AuthLoading(isGoogleSignIn: true));
   final result = await signInWithGoogleUseCase();

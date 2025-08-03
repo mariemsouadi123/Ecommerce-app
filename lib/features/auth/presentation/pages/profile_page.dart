@@ -1,11 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:ecommerce_app/features/auth/domain/entities/user_entity.dart';
+import 'package:ecommerce_app/features/auth/presentation/bloc/auth_bloc.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  @override
   Widget build(BuildContext context) {
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (state is Authenticated) {
+          final user = state.user;
+          final isGoogleUser = user.imageUrl?.contains('googleusercontent.com') ?? false;
+
+          return _buildProfileContent(user, isGoogleUser);
+        }
+
+        return const Scaffold(
+          body: Center(child: Text('Please sign in to view profile')),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileContent(UserEntity user, bool isGoogleUser) {
     return Scaffold(
       body: Stack(
         children: [
@@ -15,8 +46,8 @@ class ProfilePage extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFFFEE3BC), // Light beige
-                  Color(0xFFFFF9F0), // Off-white
+                  Color(0xFFFEE3BC),
+                  Color(0xFFFFF9F0),
                 ],
               ),
             ),
@@ -50,11 +81,9 @@ class ProfilePage extends StatelessWidget {
             ),
           ),
           
-          // Content
           SafeArea(
             child: Column(
               children: [
-                // Header with Back button and title
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Row(
@@ -62,9 +91,7 @@ class ProfilePage extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.arrow_back),
                         color: const Color(0xFF5E3023),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 16),
                       const Expanded(
@@ -80,28 +107,38 @@ class ProfilePage extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.edit),
                         color: const Color(0xFF5E3023),
-                        onPressed: () {
-                          // Edit profile logic
-                        },
+                        onPressed: () {/* Edit profile */},
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // Profile avatar
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 50,
-                  backgroundColor: Color(0xFF5E3023),
-                  child: Icon(
-                    Icons.person,
-                    size: 60,
-                    color: Colors.white,
-                  ),
+                  backgroundColor: const Color(0xFF5E3023),
+                  child: user.imageUrl != null
+                      ? ClipOval(
+                          child: Image.network(
+                            user.imageUrl!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.white,
+                        ),
                 ),
                 const SizedBox(height: 20),
 
-                // Card for Personal Info
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(16),
@@ -118,8 +155,8 @@ class ProfilePage extends StatelessWidget {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         'Personal Information',
                         style: TextStyle(
                           fontSize: 18,
@@ -127,44 +164,73 @@ class ProfilePage extends StatelessWidget {
                           color: Color(0xFF5E3023),
                         ),
                       ),
-                      SizedBox(height: 12),
-                      Text(
+                      const SizedBox(height: 12),
+                      const Text(
                         'Name',
                         style: TextStyle(color: Color(0xFF5E3023)),
                       ),
                       Text(
-                        'mariem souadi',
-                        style: TextStyle(
+                        user.name,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFF5E3023),
                         ),
                       ),
-                      Divider(),
-                      Text(
+                      const Divider(),
+                      const Text(
                         'Email',
                         style: TextStyle(color: Color(0xFF5E3023)),
                       ),
                       Text(
-                        'souadimariem74@gmail.com',
-                        style: TextStyle(
+                        user.email,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFF5E3023),
                         ),
                       ),
+                      if (!isGoogleUser) ...[
+                        if (user.phone?.isNotEmpty ?? false) ...[
+                          const Divider(),
+                          const Text(
+                            'Phone',
+                            style: TextStyle(color: Color(0xFF5E3023)),
+                          ),
+                          Text(
+                            user.phone!,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF5E3023),
+                            ),
+                          ),
+                        ],
+                        if (user.address?.isNotEmpty ?? false) ...[
+                          const Divider(),
+                          const Text(
+                            'Address',
+                            style: TextStyle(color: Color(0xFF5E3023)),
+                          ),
+                          Text(
+                            user.address!,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF5E3023),
+                            ),
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 ),
                 const Spacer(),
 
-                // Delete account button
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Delete account logic
-                    },
+                    onPressed: () {/* Delete account */},
                     icon: const Icon(Icons.delete, color: Colors.red),
                     label: const Text(
                       'Delete Account',

@@ -118,7 +118,7 @@ Future<UserModel> getCurrentUser() async {
   if (token == null) throw const UnauthorizedException('Not authenticated');
 
   final response = await client.get(
-    Uri.parse('$baseUrl/api/user'), // Ensure this matches your backend
+    Uri.parse('$baseUrl/api/user'),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',

@@ -103,7 +103,7 @@ class AuthWrapper extends StatelessWidget {
           });
           return  LoginPage();
         }
-        return  LoginPage(); // fallback
+        return  LoginPage();
       },
     );
   }
@@ -130,12 +130,11 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFFFEE3BC), // Light beige
+        backgroundColor: const Color(0xFFFEE3BC),
         elevation: 0,
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo with animation
             CachedNetworkImage(
               imageUrl: 'https://maison-kayser.com/wp-content/themes/kayser/images/international_logo.png',
               height: 40,
@@ -146,13 +145,13 @@ class _MainPageState extends State<MainPage> {
                 width: 40,
                 child: Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFF5E3023), // Dark brown
+                    color: Color(0xFF5E3023),
                   ),
                 ),
               ),
               errorWidget: (context, url, error) => Icon(
                 Icons.bakery_dining,
-                color: const Color(0xFF5E3023), // Dark brown
+                color: const Color(0xFF5E3023),
                 size: 40,
               ),
             )
@@ -160,12 +159,10 @@ class _MainPageState extends State<MainPage> {
             .scale(delay: 200.ms),
             
             const SizedBox(width: 12),
-            
-            // Title with animation
             Text(
               _getAppBarTitle(),
               style: const TextStyle(
-                color: Color(0xFF5E3023), // Dark brown
+                color: Color(0xFF5E3023),
                 fontWeight: FontWeight.bold,
                 fontSize: 22,
                 letterSpacing: 1.1,
@@ -178,20 +175,17 @@ class _MainPageState extends State<MainPage> {
         ),
         centerTitle: true,
         actions: [
-          // Favorite button (only on home page)
           if (_currentIndex == 0) _buildFavoriteButton(context),
-          
-          // Profile button
-          IconButton(
+                    IconButton(
             icon: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF6B35).withOpacity(0.2), // Red-orange
+                color: const Color(0xFFFF6B35).withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.person,
-                color: Color(0xFF5E3023), // Dark brown
+                color: Color(0xFF5E3023),
               ),
             ),
             onPressed: () {
@@ -231,7 +225,7 @@ class _MainPageState extends State<MainPage> {
               child: BottomNavigationBar(
                 currentIndex: _currentIndex,
                 onTap: (index) {
-                  if (index == 2) { // Logout button index
+                  if (index == 2) {
                     context.read<AuthBloc>().add(LogoutEvent());
                     return;
                   }
@@ -241,9 +235,9 @@ class _MainPageState extends State<MainPage> {
                   setState(() => _currentIndex = index);
                 },
                 type: BottomNavigationBarType.fixed,
-                backgroundColor: const Color(0xFFFEE3BC), // Light beige
-                selectedItemColor: const Color(0xFFFF6B35), // Red-orange
-                unselectedItemColor: const Color(0xFF5E3023).withOpacity(0.6), // Dark brown
+                backgroundColor: const Color(0xFFFEE3BC), 
+                selectedItemColor: const Color(0xFFFF6B35), 
+                unselectedItemColor: const Color(0xFF5E3023).withOpacity(0.6),
                 selectedLabelStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
@@ -289,7 +283,7 @@ class _MainPageState extends State<MainPage> {
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFC8553D), // Dark red
+                                  color: const Color(0xFFC8553D),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: const Color(0xFFFEE3BC),

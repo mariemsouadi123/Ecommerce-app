@@ -17,19 +17,19 @@ class AuthTokenProviderImpl implements AuthTokenProvider {
   @override
   Future<String?> getToken() async {
     final token = _sharedPreferences.getString(_tokenKey);
-    print('Retrieved token: $token'); // Debug log
+    print('Retrieved token: $token');
     return token;
   }
 
   @override
   Future<void> saveToken(String token) async {
-    print('Saving token: $token'); // Debug log
+    print('Saving token: $token');
     await _sharedPreferences.setString(_tokenKey, token);
   }
 
   @override
   Future<void> clearToken() async {
-    print('Clearing token'); // Debug log
+    print('Clearing token');
     await _sharedPreferences.remove(_tokenKey);
   }
 }

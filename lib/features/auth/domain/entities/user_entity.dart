@@ -5,7 +5,7 @@ class UserEntity {
   final String? address;
   final String? phone;
   final String? imageUrl;
-  final String? token; // Add this field
+  final String? token; 
 
 
   // Constructor
@@ -16,11 +16,10 @@ class UserEntity {
     this.address,
     this.phone,
     this.imageUrl,
-     this.token, // Add this
+     this.token, 
 
   });
 
-  // copyWith method
   UserEntity copyWith({
     String? id,
     String? name,

@@ -44,22 +44,19 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Gradient background
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFFFEE3BC), // Light beige
-                  const Color(0xFFFFF9F0), // Off-white
-                  const Color(0xFFFEE3BC), // Light beige
+                  const Color(0xFFFEE3BC),
+                  const Color(0xFFFFF9F0),
+                  const Color(0xFFFEE3BC),
                 ],
               ),
             ),
           ).animate().fadeIn(duration: 500.ms),
-          
-          // Decorative circles from Register page
           Positioned(
             top: -50,
             left: -50,
@@ -85,8 +82,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ).animate().scale(delay: 300.ms, duration: 1000.ms),
           ),
-          
-          // Content
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -96,8 +91,6 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 40),
-                    
-                    // Logo
                     Container(
                       height: 120,
                       decoration: BoxDecoration(
@@ -114,8 +107,6 @@ class _LoginPageState extends State<LoginPage> {
                     .fadeIn(),
                     
                     const SizedBox(height: 30),
-                    
-                    // Title
                     Text('Welcome Back',
                       style: TextStyle(
                         fontSize: 32,
@@ -140,8 +131,6 @@ class _LoginPageState extends State<LoginPage> {
                     .fadeIn(delay: 400.ms),
                     
                     const SizedBox(height: 40),
-                    
-                    // Email field
                     _buildAnimatedTextField(
                       controller: _emailController,
                       label: 'Email',
@@ -152,9 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     
                     const SizedBox(height: 20),
-                    
-                    // Password field
-                    _buildAnimatedTextField(
+                  _buildAnimatedTextField(
                       controller: _passwordController,
                       label: 'Password',
                       icon: Icons.lock_outlined,
