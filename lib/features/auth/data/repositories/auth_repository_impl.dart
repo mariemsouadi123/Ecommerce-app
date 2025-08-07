@@ -165,30 +165,31 @@ Future<Either<Failure, UserEntity>> signInWithGoogle() async {
 }
 
   @override
-  Future<Either<Failure, UserEntity>> updateProfile(UserEntity user) async {
-    try {
-      if (!await networkInfo.isConnected) {
-        return Left(OfflineFailure());
-      }
-
-      final token = await getToken();
-      if (token == null) {
-        return Left(UnauthorizedFailure());
-      }
-
-      final userModel = await remoteDataSource.updateProfile(user);
-      return Right(userModel.toEntity());
-    } on UnauthorizedException {
-      return Left(UnauthorizedFailure());
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message));
-    } on NetworkException {
+Future<Either<Failure, UserEntity>> updateProfile(UserEntity user) async {
+  try {
+    if (!await networkInfo.isConnected) {
       return Left(OfflineFailure());
-    } catch (e) {
-      return Left(ServerFailure(message: 'Failed to update profile: ${e.toString()}'));
     }
-  }
 
+    final token = await getToken();
+    if (token == null) {
+      return Left(UnauthorizedFailure());
+    }
+
+    final userModel = await remoteDataSource.updateProfile(user);
+    return Right(userModel.toEntity());
+  } on UnauthorizedException {
+    return Left(UnauthorizedFailure());
+  } on ServerException catch (e) {
+    return Left(ServerFailure(message: e.message));
+  } on NetworkException {
+    return Left(OfflineFailure());
+  } catch (e) {
+    return Left(ServerFailure(
+      message: 'Failed to update profile: ${e.toString()}'
+    ));
+  }
+}
   Future<String> getToken() async {
     final token = _sharedPreferences.getString(_tokenKey);
     if (token == null) {

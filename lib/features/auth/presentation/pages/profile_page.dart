@@ -80,7 +80,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ],
             ),
           ),
-          
           SafeArea(
             child: Column(
               children: [
@@ -107,13 +106,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       IconButton(
                         icon: const Icon(Icons.edit),
                         color: const Color(0xFF5E3023),
-                        onPressed: () {/* Edit profile */},
+                        onPressed: () {
+                         
+                        },
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: const Color(0xFF5E3023),
@@ -138,7 +138,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                 ),
                 const SizedBox(height: 20),
-
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
                   padding: const EdgeInsets.all(16),
@@ -226,11 +225,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 const Spacer(),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                   child: ElevatedButton.icon(
-                    onPressed: () {/* Delete account */},
+                    onPressed: () {
+                      // Delete account
+                    },
                     icon: const Icon(Icons.delete, color: Colors.red),
                     label: const Text(
                       'Delete Account',

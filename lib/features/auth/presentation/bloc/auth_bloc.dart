@@ -64,13 +64,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(_mapFailureOrUserToState(result));
   }
 Future<void> _onUpdateProfile(
-    UpdateProfileEvent event, 
-    Emitter<AuthState> emit
-  ) async {
-    emit(AuthLoading());
+  UpdateProfileEvent event, 
+  Emitter<AuthState> emit
+) async {
+  emit(AuthLoading());
+  try {
     final result = await updateProfileUseCase(event.user);
-    emit(_mapFailureOrUserToState(result));
+    result.fold(
+      (failure) => emit(AuthError(_mapFailureToMessage(failure))),
+      (updatedUser) => emit(Authenticated(user: updatedUser)),
+    );
+  } catch (e) {
+    emit(AuthError('Failed to update profile'));
   }
+}
   Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     final result = await logoutUseCase();

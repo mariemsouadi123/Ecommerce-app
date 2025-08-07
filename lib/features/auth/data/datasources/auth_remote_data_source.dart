@@ -127,35 +127,45 @@ Future<UserModel> getCurrentUser() async {
 
   return _handleResponse(response, (data) => UserModel.fromJson(data));
 }
-  @override
-  Future<UserModel> updateProfile(UserEntity user) async {
-    if (!await networkInfo.isConnected) throw const NetworkException();
+@override
+Future<UserModel> updateProfile(UserEntity user) async {
+  if (!await networkInfo.isConnected) throw const NetworkException();
+  
+  final token = await tokenProvider.getToken();
+  if (token == null) throw const UnauthorizedException('Not authenticated');
+
+  try {
+    final response = await client.put(
+      Uri.parse('$baseUrl/api/user'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'name': user.name,
+        'email': user.email,
+        'phone': user.phone,
+        'address': user.address,
+      }),
+    );
+
+    final responseBody = jsonDecode(response.body);
     
-    final token = await tokenProvider.getToken();
-    if (token == null) throw const UnauthorizedException('Not authenticated');
-
-    try {
-      final response = await client.put(
-        Uri.parse('$baseUrl/api/user'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'name': user.name,
-          'email': user.email,
-          'phone': user.phone,
-          'address': user.address,
-        }),
-      );
-
-      return _handleResponse(response, (data) => UserModel.fromJson(data['user']));
-    } catch (e) {
-      print('[ERROR] Failed to update profile: $e');
-      rethrow;
+    if (response.statusCode == 200) {
+      return UserModel.fromJson(responseBody['user']);
+    } else {
+      final errorMsg = responseBody['error'] ?? 
+                     responseBody['details'] ?? 
+                     'Failed to update profile';
+      throw ServerException(errorMsg);
     }
+  } on ServerException {
+    throw const NetworkException();
+  } catch (e) {
+    print('[ERROR] Failed to update profile: $e');
+    rethrow;
   }
-
+}
   @override
 Future<void> logout() async {
   await tokenProvider.clearToken();
