@@ -157,31 +157,9 @@ Future<UserModel> getCurrentUser() async {
   }
 
   @override
-  Future<void> logout() async {
-    if (!await networkInfo.isConnected) throw const NetworkException();
-    
-    final token = await tokenProvider.getToken();
-    if (token == null) throw const UnauthorizedException('Not authenticated');
-
-    try {
-      final response = await client.post(
-        Uri.parse('$baseUrl/api/logout'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        await tokenProvider.clearToken();
-      } else {
-        throw ServerException('Logout failed with status ${response.statusCode}');
-      }
-    } catch (e) {
-      print('[ERROR] Failed to logout: $e');
-      rethrow;
-    }
-  }
+Future<void> logout() async {
+  await tokenProvider.clearToken();
+}
 
   T _handleResponse<T>(
     http.Response response,

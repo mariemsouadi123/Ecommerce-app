@@ -110,24 +110,15 @@ Future<Either<Failure, UserEntity>> login(String email, String password) async {
   }
 
   @override
-  Future<Either<Failure, Unit>> logout() async {
-    try {
-      if (!await networkInfo.isConnected) {
-        return Left(OfflineFailure());
-      }
-
-      await remoteDataSource.logout();
-      await _clearToken();
-      await _googleSignIn.signOut(); 
-      return const Right(unit);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(message: e.message));
-    } on NetworkException {
-      return Left(OfflineFailure());
-    } catch (e) {
-      return Left(ServerFailure(message: 'Logout failed: ${e.toString()}'));
-    }
+Future<Either<Failure, Unit>> logout() async {
+  try {
+    await remoteDataSource.logout();
+    await _googleSignIn.signOut();
+    return const Right(unit);
+  } catch (e) {
+    return Left(ServerFailure(message: 'Logout failed'));
   }
+}
 
   @override
 Future<Either<Failure, UserEntity>> signInWithGoogle() async {

@@ -21,9 +21,9 @@ class ProductsPage extends StatelessWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFFFEE3BC), // Light beige
-              Color(0xFFFFF9F0), // Off-white
-              Color(0xFFFEE3BC), // Light beige
+              Color(0xFFFEE3BC), 
+              Color(0xFFFFF9F0), 
+              Color(0xFFFEE3BC),
             ],
           ),
         ),
@@ -119,7 +119,6 @@ class ProductsPage extends StatelessWidget {
               
           return Column(
             children: [
-              // Categories
               Padding(
                 padding: const EdgeInsets.only(top: 8, bottom: 12),
                 child: _buildCategoryChips(context, state),
